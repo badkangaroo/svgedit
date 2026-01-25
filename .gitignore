@@ -1,0 +1,27 @@
+.DS_Store
+.env
+.env.*
+
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+coverage/
+
+# Tooling caches
+.cache/
+.vite/
+.turbo/
+.parcel-cache/
+.eslintcache
+.npm/
+.pnpm-store/
+.yarn/
+.obsidian/
+
+# Temp files
+tmp/
+temp/
