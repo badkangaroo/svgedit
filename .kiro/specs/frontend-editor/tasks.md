@@ -159,13 +159,13 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - _Requirements: 3.2_
 
 - [ ] 10. Implement raw SVG panel component
-  - [~] 10.1 Create raw SVG panel with text editor
+  - [x] 10.1 Create raw SVG panel with text editor
     - Build `<svg-raw-panel>` component with textarea or code editor
     - Subscribe to document state signal to display SVG text
     - Implement syntax highlighting (optional enhancement)
     - _Requirements: 1.1, 5.1_
   
-  - [~] 10.2 Implement debounced parsing
+  - [x] 10.2 Implement debounced parsing
     - Add 300ms debounce to text input
     - Parse SVG and update document state on debounce completion
     - Display parse errors inline with line/column info
@@ -175,7 +175,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 9: Invalid SVG state preservation**
     - **Validates: Requirements 5.3**
   
-  - [~] 10.4 Implement rollback mechanism
+  - [x] 10.4 Implement rollback mechanism
     - Add rollback button to revert to last valid state
     - Maintain snapshot of last valid document state
     - _Requirements: 5.4_
@@ -184,13 +184,13 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 10: Successful parse view synchronization**
     - **Validates: Requirements 5.5**
   
-  - [~] 10.6 Wire raw SVG selection to selection manager
+  - [x] 10.6 Wire raw SVG selection to selection manager
     - Detect element selection from cursor position in text
     - Update text selection when selection changes from other views
     - _Requirements: 3.3_
 
 - [ ] 11. Implement attribute inspector component
-  - [~] 11.1 Create attribute inspector with dynamic forms
+  - [x] 11.1 Create attribute inspector with dynamic forms
     - Build `<svg-attribute-inspector>` component
     - Subscribe to selection state signal
     - Display all attributes of selected element
@@ -201,7 +201,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 6: Attribute display completeness**
     - **Validates: Requirements 4.1**
   
-  - [~] 11.3 Implement attribute editing and validation
+  - [x] 11.3 Implement attribute editing and validation
     - Handle attribute value changes from input controls
     - Validate attribute values before applying
     - Display validation errors inline
@@ -216,7 +216,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 27: Attribute validation error feedback**
     - **Validates: Requirements 15.3**
 
-- [~] 12. Sprint 2 Checkpoint
+- [x] 12. Sprint 2 Checkpoint
   - Verify selection syncs across canvas, hierarchy, raw SVG, and inspector
   - Verify attribute edits update raw SVG text within 100ms for 1k nodes
   - Verify raw SVG edits re-parse with error display and rollback
@@ -226,7 +226,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
 ### Sprint 3: Core Editing Flows
 
 - [ ] 13. Implement history manager for undo/redo
-  - [~] 13.1 Create history manager with undo/redo stacks
+  - [x] 13.1 Create history manager with undo/redo stacks
     - Implement HistoryManager class with undo and redo stacks
     - Create Operation interface with undo/redo functions
     - Maintain at least 50 operations in history
@@ -236,7 +236,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 20: Undo history capacity**
     - **Validates: Requirements 9.5**
   
-  - [~] 13.3 Implement undo and redo functionality
+  - [x] 13.3 Implement undo and redo functionality
     - Create undo() and redo() methods
     - Update all views after undo/redo
     - _Requirements: 9.2, 9.3_
@@ -246,13 +246,13 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 9.2, 9.3**
 
 - [ ] 14. Implement tool palette and primitive creation
-  - [~] 14.1 Create tool palette component
+  - [x] 14.1 Create tool palette component
     - Build `<svg-tool-palette>` component with tool buttons
     - Implement tool selection state
     - Display active tool indicator
     - _Requirements: 1.1, 6.1_
   
-  - [~] 14.2 Implement primitive creation tools
+  - [x] 14.2 Implement primitive creation tools
     - Create tools for rectangle, circle, ellipse, line, path, text, group
     - Handle canvas mouse events to create primitives
     - Assign default attributes to new primitives
@@ -272,7 +272,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 6.5**
 
 - [ ] 15. Implement transform engine for element manipulation
-  - [~] 15.1 Create transform engine for move operations
+  - [x] 15.1 Create transform engine for move operations
     - Implement TransformEngine class with move() method
     - Handle single and multi-element movement
     - Update element position or transform attributes
@@ -287,7 +287,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 15: Multi-element movement**
     - **Validates: Requirements 7.4**
   
-  - [~] 15.4 Implement canvas drag-to-move interaction
+  - [x] 15.4 Implement canvas drag-to-move interaction
     - Handle mousedown, mousemove, mouseup for dragging
     - Provide visual feedback during drag
     - Finalize position on mouseup and push to undo stack
@@ -298,7 +298,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 7.5, 8.4, 9.1**
 
 - [ ] 16. Implement element deletion
-  - [~] 16.1 Create delete operation
+  - [x] 16.1 Create delete operation
     - Implement delete functionality in transform engine or state manager
     - Remove elements from document state
     - Support single and multi-element deletion
@@ -314,7 +314,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 8.5**
 
 - [ ] 17. Implement keyboard shortcuts
-  - [~] 17.1 Create keyboard shortcut manager
+  - [x] 17.1 Create keyboard shortcut manager
     - Implement global keyboard event handler
     - Map shortcuts to actions (undo, redo, delete, copy, paste, save)
     - Handle platform differences (Ctrl vs Cmd)

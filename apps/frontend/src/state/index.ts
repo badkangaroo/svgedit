@@ -19,3 +19,22 @@ export {
   type SelectionChangeEvent,
   type SelectionSyncCallbacks,
 } from './selection-manager';
+export {
+  HistoryManager,
+  historyManager,
+} from './history-manager';
+export {
+  EditorController,
+  editorController,
+} from './editor-controller';
+export {
+  TransformEngine,
+  transformEngine,
+} from './transform-engine';
+export {
+  KeyboardShortcutManager,
+  keyboardShortcutManager,
+  type ShortcutAction,
+  type KeyboardShortcut,
+  type ShortcutHandler,
+} from './keyboard-shortcut-manager';

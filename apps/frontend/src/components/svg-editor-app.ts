@@ -2,9 +2,11 @@
  * Root application component for the SVG Editor
  * Manages the overall layout with menu bar, canvas, hierarchy panel, inspector, and tools
  * Implements CSS Grid layout with resizable panels
+ * Manages global keyboard shortcuts
  */
 
 import type { PanelLayout } from '../types';
+import { keyboardShortcutManager } from '../state/keyboard-shortcut-manager';
 
 const DEFAULT_LAYOUT: PanelLayout = {
   hierarchyWidth: 250,
@@ -32,10 +34,16 @@ export class SVGEditorApp extends HTMLElement {
     this.loadLayout();
     this.render();
     this.attachEventListeners();
+    
+    // Attach keyboard shortcut manager
+    keyboardShortcutManager.attach();
   }
 
   disconnectedCallback() {
     this.detachEventListeners();
+    
+    // Detach keyboard shortcut manager
+    keyboardShortcutManager.detach();
   }
 
   private loadLayout() {
@@ -158,18 +166,11 @@ export class SVGEditorApp extends HTMLElement {
           background-color: var(--color-primary);
         }
 
-        .tool-palette {
+        .tool-palette-container {
           position: absolute;
           top: var(--spacing-md);
           left: var(--spacing-md);
-          background-color: var(--color-surface);
-          border: 1px solid var(--color-outline);
-          border-radius: var(--radius-md);
-          padding: var(--spacing-sm);
-          box-shadow: var(--shadow-md);
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-xs);
+          z-index: 10;
         }
 
         /* Placeholder styles for panels */
@@ -211,35 +212,6 @@ export class SVGEditorApp extends HTMLElement {
           height: 20px;
           fill: currentColor;
         }
-
-        .tool-button {
-          width: 40px;
-          height: 40px;
-          background: var(--color-surface-variant);
-          border: 1px solid var(--color-outline);
-          border-radius: var(--radius-sm);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all var(--transition-fast);
-        }
-
-        .tool-button:hover {
-          background: var(--color-primary-container);
-          border-color: var(--color-primary);
-        }
-
-        .tool-button:focus-visible {
-          outline: 2px solid var(--color-primary);
-          outline-offset: 2px;
-        }
-
-        .tool-button.active {
-          background: var(--color-primary);
-          color: var(--color-on-primary);
-          border-color: var(--color-primary);
-        }
       </style>
 
       <div class="app-container">
@@ -266,22 +238,8 @@ export class SVGEditorApp extends HTMLElement {
 
         <!-- Canvas Area -->
         <div class="canvas-area">
-          <div class="tool-palette">
-            <button class="tool-button" title="Select" aria-label="Select tool">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>
-              </svg>
-            </button>
-            <button class="tool-button" title="Rectangle" aria-label="Rectangle tool">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18"/>
-              </svg>
-            </button>
-            <button class="tool-button" title="Circle" aria-label="Circle tool">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9"/>
-              </svg>
-            </button>
+          <div class="tool-palette-container">
+            <svg-tool-palette></svg-tool-palette>
           </div>
           <svg-canvas></svg-canvas>
         </div>
@@ -291,14 +249,14 @@ export class SVGEditorApp extends HTMLElement {
 
         <!-- Inspector Panel -->
         <div class="inspector-panel">
-          <div class="panel-placeholder">Attribute Inspector</div>
+          <svg-attribute-inspector></svg-attribute-inspector>
         </div>
 
         <!-- Raw SVG Divider -->
         ${this.layout.rawSVGVisible ? '<div class="divider divider-v" data-divider="rawSVG"></div>' : ''}
 
         <!-- Raw SVG Panel -->
-        ${this.layout.rawSVGVisible ? '<div class="raw-svg-panel"><div class="panel-placeholder">Raw SVG Panel</div></div>' : ''}
+        ${this.layout.rawSVGVisible ? '<div class="raw-svg-panel"><svg-raw-panel></svg-raw-panel></div>' : ''}
       </div>
     `;
   }

@@ -1,0 +1,49 @@
+[terminal-command] pwd
+[terminal-output]
+/Users/alexokita/git_repos/svgedit
+
+[terminal-command] mkdir -p "/Users/alexokita/git_repos/svgedit/logs"
+[terminal-output]
+
+[terminal-command] pwd
+[terminal-output]
+/Users/alexokita/git_repos/svgedit/apps/backend
+
+[terminal-command] npm install @netlify/blobs
+[terminal-output]
+added 56 packages, and audited 171 packages in 18s
+
+47 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+[terminal-command] npm install postgres
+[terminal-output]
+added 1 package, and audited 115 packages in 1s
+
+36 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+[terminal-command] pwd
+[terminal-output]
+/Users/alexokita/git_repos/svgedit/apps/backend
+
+[terminal-command] pwd
+[terminal-output]
+/Users/alexokita/git_repos/svgedit/apps/backend
+
+[terminal-command] npm install @fastify/jwt argon2
+[terminal-output]
+added 28 packages, and audited 114 packages in 13s
+
+35 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+
+[terminal-command] pwd
+[terminal-output]
+/Users/alexokita/git_repos/svgedit/apps/backend
+

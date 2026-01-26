@@ -58,6 +58,11 @@ export interface PanelLayout {
 export type Theme = 'light' | 'dark';
 
 /**
+ * Tool type identifier
+ */
+export type ToolType = 'select' | 'rectangle' | 'circle' | 'ellipse' | 'line' | 'path' | 'text' | 'group';
+
+/**
  * Editor state
  */
 export interface EditorState {

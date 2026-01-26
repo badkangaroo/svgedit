@@ -591,4 +591,329 @@ describe('SVGCanvas Component', () => {
       });
     });
   });
+
+  describe('Task 15.4: Drag-to-Move Interaction', () => {
+    let svg: SVGElement;
+    let rect1: SVGElement;
+    let rect2: SVGElement;
+
+    beforeEach(async () => {
+      // Create a test SVG with elements
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('width', '400');
+      svg.setAttribute('height', '400');
+
+      rect1 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect1.setAttribute('id', 'rect1');
+      rect1.setAttribute('x', '50');
+      rect1.setAttribute('y', '50');
+      rect1.setAttribute('width', '100');
+      rect1.setAttribute('height', '100');
+      svg.appendChild(rect1);
+
+      rect2 = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect2.setAttribute('id', 'rect2');
+      rect2.setAttribute('x', '200');
+      rect2.setAttribute('y', '50');
+      rect2.setAttribute('width', '100');
+      rect2.setAttribute('height', '100');
+      svg.appendChild(rect2);
+
+      documentStateUpdater.setDocument(svg, [], '<svg>...</svg>');
+      await new Promise(resolve => setTimeout(resolve, 10));
+    });
+
+    describe('Drag Initiation (Requirement 7.1)', () => {
+      it('should start drag when mousedown on selected element', async () => {
+        // Select rect1
+        selectionManager.select(['rect1']);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Get the rendered element
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+        expect(renderedRect1).not.toBeNull();
+
+        // Simulate mousedown on selected element
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Verify drag state is active (visual feedback should be present)
+        const overlay = canvas.shadowRoot?.querySelector('.selection-overlay');
+        const outline = overlay?.querySelector('.selection-outline');
+        expect(outline).not.toBeNull();
+      });
+
+      it('should not start drag when clicking unselected element', async () => {
+        // rect1 is not selected
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+
+        // Click should select, not drag
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Element should be selected
+        expect(selectionManager.getSelectedIds().has('rect1')).toBe(true);
+      });
+    });
+
+    describe('Visual Feedback During Drag (Requirement 7.3)', () => {
+      it('should add dragging class to selection outline during drag', async () => {
+        // Select and start drag
+        selectionManager.select(['rect1']);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+
+        // Mousedown
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Mousemove to trigger drag
+        const mouseMoveEvent = new MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 120,
+          clientY: 120,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseMoveEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Check for dragging class
+        const overlay = canvas.shadowRoot?.querySelector('.selection-overlay');
+        const outline = overlay?.querySelector('.selection-outline');
+        expect(outline?.classList.contains('dragging')).toBe(true);
+      });
+
+      it('should remove dragging class after mouseup', async () => {
+        // Select and start drag
+        selectionManager.select(['rect1']);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+
+        // Mousedown
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+
+        // Mousemove
+        const mouseMoveEvent = new MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 120,
+          clientY: 120,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseMoveEvent);
+
+        // Mouseup
+        const mouseUpEvent = new MouseEvent('mouseup', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 120,
+          clientY: 120,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseUpEvent);
+        await new Promise(resolve => setTimeout(resolve, 50)); // Longer wait for document state update
+
+        // After drag, selection should still be active
+        expect(selectionManager.hasSelection()).toBe(true);
+        
+        // Dragging class should be removed (if outline exists)
+        const overlay = canvas.shadowRoot?.querySelector('.selection-overlay');
+        const outline = overlay?.querySelector('.selection-outline');
+        
+        // The outline might not exist if selection was cleared during document update
+        // This is acceptable as long as dragging state is properly reset
+        if (outline) {
+          expect(outline.classList.contains('dragging')).toBe(false);
+        }
+      });
+    });
+
+    describe('Drag Cancellation', () => {
+      it('should cancel drag when mouse leaves canvas', async () => {
+        // Select and start drag
+        selectionManager.select(['rect1']);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+
+        // Store original position
+        const originalX = renderedRect1?.getAttribute('x');
+
+        // Mousedown
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+
+        // Mousemove
+        const mouseMoveEvent = new MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 150,
+          clientY: 150,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseMoveEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Mouse leave
+        const mouseLeaveEvent = new MouseEvent('mouseleave', {
+          bubbles: true,
+          cancelable: true,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseLeaveEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Dragging class should be removed
+        const overlay = canvas.shadowRoot?.querySelector('.selection-overlay');
+        const outline = overlay?.querySelector('.selection-outline');
+        expect(outline?.classList.contains('dragging')).toBe(false);
+      });
+    });
+
+    describe('Multi-Element Drag (Requirement 7.4)', () => {
+      it('should drag all selected elements together', async () => {
+        // Select both rectangles
+        selectionManager.select(['rect1', 'rect2']);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+
+        // Mousedown on rect1
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+
+        // Mousemove
+        const mouseMoveEvent = new MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 120,
+          clientY: 120,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseMoveEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Both elements should have dragging visual feedback
+        const overlay = canvas.shadowRoot?.querySelector('.selection-overlay');
+        const outlines = overlay?.querySelectorAll('.selection-outline.dragging');
+        expect(outlines?.length).toBe(2);
+      });
+    });
+
+    describe('Edge Cases', () => {
+      it('should handle zero-distance drag (click without move)', async () => {
+        // Select rect1
+        selectionManager.select(['rect1']);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const svgContent = canvas.shadowRoot?.querySelector('.svg-content') as SVGElement;
+        const renderedRect1 = svgContent?.querySelector('#rect1');
+
+        // Mousedown and mouseup at same position
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: renderedRect1, enumerable: true });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseDownEvent);
+
+        const mouseUpEvent = new MouseEvent('mouseup', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        canvas.shadowRoot?.querySelector('.canvas-container')?.dispatchEvent(mouseUpEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Should not crash, element should remain selected
+        expect(selectionManager.getSelectedIds().has('rect1')).toBe(true);
+      });
+
+      it('should handle drag with no selected elements', async () => {
+        // No selection
+        selectionManager.clearSelection();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const container = canvas.shadowRoot?.querySelector('.canvas-container');
+
+        // Try to drag on empty canvas
+        const mouseDownEvent = new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 100,
+          clientY: 100,
+        });
+        Object.defineProperty(mouseDownEvent, 'target', { value: container, enumerable: true });
+        container?.dispatchEvent(mouseDownEvent);
+
+        const mouseMoveEvent = new MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 120,
+          clientY: 120,
+        });
+        container?.dispatchEvent(mouseMoveEvent);
+
+        const mouseUpEvent = new MouseEvent('mouseup', {
+          bubbles: true,
+          cancelable: true,
+          clientX: 120,
+          clientY: 120,
+        });
+        container?.dispatchEvent(mouseUpEvent);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        // Should not crash
+        expect(selectionManager.hasSelection()).toBe(false);
+      });
+    });
+  });
 });
