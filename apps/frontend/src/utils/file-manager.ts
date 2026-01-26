@@ -11,6 +11,7 @@ import type { FileState } from '../types';
 import { svgParser } from './svg-parser';
 import { documentStateUpdater } from '../state/document-state';
 import { editorController } from '../state/editor-controller';
+import { loadingIndicator } from './loading-indicator';
 
 /**
  * Check if File System Access API is supported
@@ -58,53 +59,68 @@ export class FileManager {
    * Maintains file handle for future save operations
    */
   private async openWithFileSystemAccess(): Promise<FileState> {
-    // Show file picker
-    const [fileHandle] = await (window as any).showOpenFilePicker({
-      types: [
-        {
-          description: 'SVG Files',
-          accept: {
-            'image/svg+xml': ['.svg'],
-          },
-        },
-      ],
-      multiple: false,
+    const loadingHandle = loadingIndicator.show({
+      message: 'Opening file...',
+      type: 'spinner',
     });
 
-    // Get the file
-    const file = await fileHandle.getFile();
-    const content = await file.text();
+    try {
+      // Show file picker
+      const [fileHandle] = await (window as any).showOpenFilePicker({
+        types: [
+          {
+            description: 'SVG Files',
+            accept: {
+              'image/svg+xml': ['.svg'],
+            },
+          },
+        ],
+        multiple: false,
+      });
 
-    // Parse the SVG content
-    const parseResult = svgParser.parse(content);
+      loadingHandle.updateMessage('Reading file...');
 
-    if (!parseResult.success) {
-      // Show parse errors to user
-      const errorMessages = parseResult.errors
-        .map(err => `Line ${err.line}, Column ${err.column}: ${err.message}`)
-        .join('\n');
-      throw new Error(`Failed to parse SVG file:\n${errorMessages}`);
+      // Get the file
+      const file = await fileHandle.getFile();
+      const content = await file.text();
+
+      loadingHandle.updateMessage('Parsing SVG...');
+
+      // Parse the SVG content
+      const parseResult = svgParser.parse(content);
+
+      if (!parseResult.success) {
+        // Show parse errors to user
+        const errorMessages = parseResult.errors
+          .map(err => `Line ${err.line}, Column ${err.column}: ${err.message}`)
+          .join('\n');
+        throw new Error(`Failed to parse SVG file:\n${errorMessages}`);
+      }
+
+      loadingHandle.updateMessage('Loading document...');
+
+      // Update document state with parsed content
+      documentStateUpdater.setDocument(
+        parseResult.document,
+        parseResult.tree,
+        content
+      );
+
+      // Clear undo/redo history when loading a new document
+      editorController.clearHistory();
+
+      // Update file state
+      this.currentFileState = {
+        handle: fileHandle,
+        name: file.name,
+        isDirty: false,
+        lastSaved: new Date(file.lastModified),
+      };
+
+      return { ...this.currentFileState };
+    } finally {
+      loadingHandle.hide();
     }
-
-    // Update document state with parsed content
-    documentStateUpdater.setDocument(
-      parseResult.document,
-      parseResult.tree,
-      content
-    );
-
-    // Clear undo/redo history when loading a new document
-    editorController.clearHistory();
-
-    // Update file state
-    this.currentFileState = {
-      handle: fileHandle,
-      name: file.name,
-      isDirty: false,
-      lastSaved: new Date(file.lastModified),
-    };
-
-    return { ...this.currentFileState };
   }
 
   /**
@@ -119,6 +135,11 @@ export class FileManager {
       input.accept = '.svg,image/svg+xml';
 
       input.onchange = async () => {
+        const loadingHandle = loadingIndicator.show({
+          message: 'Reading file...',
+          type: 'spinner',
+        });
+
         try {
           const file = input.files?.[0];
           if (!file) {
@@ -137,6 +158,8 @@ export class FileManager {
                 return;
               }
 
+              loadingHandle.updateMessage('Parsing SVG...');
+
               // Parse the SVG content
               const parseResult = svgParser.parse(content);
 
@@ -148,6 +171,8 @@ export class FileManager {
                 reject(new Error(`Failed to parse SVG file:\n${errorMessages}`));
                 return;
               }
+
+              loadingHandle.updateMessage('Loading document...');
 
               // Update document state with parsed content
               documentStateUpdater.setDocument(
@@ -170,16 +195,20 @@ export class FileManager {
               resolve({ ...this.currentFileState });
             } catch (error) {
               reject(error);
+            } finally {
+              loadingHandle.hide();
             }
           };
 
           reader.onerror = () => {
+            loadingHandle.hide();
             reject(new Error('Failed to read file'));
           };
 
           // Read the file as text
           reader.readAsText(file);
         } catch (error) {
+          loadingHandle.hide();
           reject(error);
         }
       };
@@ -292,14 +321,23 @@ export class FileManager {
    * Save to an existing file handle using File System Access API
    */
   private async saveWithFileSystemAccess(handle: FileSystemFileHandle, content: string): Promise<void> {
-    // Create a writable stream
-    const writable = await handle.createWritable();
-    
-    // Write the content
-    await writable.write(content);
-    
-    // Close the stream
-    await writable.close();
+    const loadingHandle = loadingIndicator.show({
+      message: 'Saving file...',
+      type: 'spinner',
+    });
+
+    try {
+      // Create a writable stream
+      const writable = await handle.createWritable();
+      
+      // Write the content
+      await writable.write(content);
+      
+      // Close the stream
+      await writable.close();
+    } finally {
+      loadingHandle.hide();
+    }
   }
 
   /**

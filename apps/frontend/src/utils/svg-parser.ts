@@ -9,6 +9,7 @@
  */
 
 import type { DocumentNode, ParseResult, ParseError } from '../types';
+import { loadingIndicator } from './loading-indicator';
 
 /**
  * ID generator for creating stable unique IDs for nodes.
@@ -52,6 +53,14 @@ export class SVGParser {
     // Reset ID generator for each parse
     this.idGenerator.reset();
     
+    // Show loading indicator for large documents (> 100KB)
+    const isLargeDocument = svgText.length > 100000;
+    const loadingHandle = isLargeDocument ? loadingIndicator.show({
+      message: 'Parsing large SVG document...',
+      type: 'spinner',
+      delay: 0, // Show immediately for large documents
+    }) : null;
+    
     try {
       // Use DOMParser to parse the SVG text
       const doc = this.domParser.parseFromString(svgText, 'image/svg+xml');
@@ -86,6 +95,10 @@ export class SVGParser {
         };
       }
       
+      if (loadingHandle) {
+        loadingHandle.updateMessage('Building document tree...');
+      }
+      
       // Build the DocumentNode tree
       const tree: DocumentNode[] = [];
       const rootNode = this.buildDocumentNode(svgElement as unknown as SVGElement);
@@ -112,6 +125,10 @@ export class SVGParser {
           severity: 'error',
         }],
       };
+    } finally {
+      if (loadingHandle) {
+        loadingHandle.hide();
+      }
     }
   }
   
@@ -217,16 +234,89 @@ export class SVGParser {
   }
   
   /**
-   * Parse SVG text in a Web Worker (for large documents)
-   * This is a placeholder for future implementation
+   * Parse SVG text in a Web Worker (for large documents > 1MB)
    * 
    * @param svgText - The SVG text to parse
+   * @param onProgress - Optional callback for progress updates
    * @returns Promise resolving to ParseResult
    */
-  async parseInWorker(svgText: string): Promise<ParseResult> {
-    // For now, just use the regular parse method
-    // In Sprint 4, this will be implemented to use Web Workers
-    return this.parse(svgText);
+  async parseInWorker(
+    svgText: string,
+    onProgress?: (percent: number, message: string) => void
+  ): Promise<ParseResult> {
+    // Check if we should use worker (> 1MB)
+    const sizeInMB = new Blob([svgText]).size / (1024 * 1024);
+    if (sizeInMB < 1) {
+      // Use regular parse for smaller documents
+      return this.parse(svgText);
+    }
+    
+    // Check if Worker is available (not available in some test environments)
+    if (typeof Worker === 'undefined') {
+      // Fall back to regular parse
+      return this.parse(svgText);
+    }
+    
+    return new Promise((resolve, reject) => {
+      try {
+        // Create worker
+        const worker = new Worker(
+          new URL('../workers/svg-parser.worker.ts', import.meta.url),
+          { type: 'module' }
+        );
+        
+        const requestId = `parse-${Date.now()}-${Math.random()}`;
+        
+        // Set up message handler
+        worker.onmessage = (event: MessageEvent) => {
+          const message = event.data;
+          
+          if (message.requestId !== requestId) {
+            return; // Ignore messages from other requests
+          }
+          
+          if (message.type === 'progress') {
+            if (onProgress) {
+              onProgress(message.percent, message.message);
+            }
+          } else if (message.type === 'result') {
+            // Clean up worker
+            worker.terminate();
+            
+            // If we have serialized SVG, re-parse it on main thread to get actual DOM elements
+            if (message.result.success && message.result.serializedSVG) {
+              const mainThreadResult = this.parse(message.result.serializedSVG);
+              resolve(mainThreadResult);
+            } else {
+              resolve(message.result);
+            }
+          } else if (message.type === 'error') {
+            // Clean up worker
+            worker.terminate();
+            
+            reject(new Error(message.error));
+          }
+        };
+        
+        // Set up error handler
+        worker.onerror = (error) => {
+          worker.terminate();
+          reject(error);
+        };
+        
+        // Send parse request to worker
+        worker.postMessage({
+          type: 'parse',
+          svgText,
+          requestId,
+        });
+        
+      } catch (error) {
+        // Fall back to regular parse if worker creation fails
+        console.warn('Failed to create worker, falling back to main thread parsing:', error);
+        resolve(this.parse(svgText));
+      }
+    });
   }
 }
 

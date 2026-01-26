@@ -101,6 +101,7 @@ export interface ParseResult {
   document: SVGElement | null;
   tree: DocumentNode[];
   errors: ParseError[];
+  serializedSVG?: string; // Optional serialized SVG from worker
 }
 
 /**

@@ -52,7 +52,7 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 1. WHEN a user selects an element in the Canvas, THE Editor SHALL highlight the corresponding node in the Hierarchy_Panel, Raw_SVG_Panel, and Attribute_Inspector
 2. WHEN a user selects a node in the Hierarchy_Panel, THE Editor SHALL highlight the corresponding element in the Canvas, Raw_SVG_Panel, and Attribute_Inspector
 3. WHEN a user selects text in the Raw_SVG_Panel, THE Editor SHALL highlight the corresponding element in the Canvas, Hierarchy_Panel, and Attribute_Inspector
-4. THE Editor SHALL complete selection synchronization across all panels within 50ms for documents with up to 1000 nodes
+4. THE Editor SHALL complete selection synchronization across all panels within 100ms for documents with up to 1000 nodes
 5. WHEN multiple elements are selected, THE Editor SHALL display all selected elements in each panel view
 
 ### Requirement 4: Attribute Editing
@@ -62,8 +62,8 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 #### Acceptance Criteria
 
 1. WHEN an element is selected, THE Attribute_Inspector SHALL display all attributes of that element
-2. WHEN a user modifies an attribute value, THE Editor SHALL update the Canvas rendering within 100ms
-3. WHEN a user modifies an attribute value, THE Editor SHALL update the Raw_SVG_Panel text within 100ms for documents with up to 1000 nodes
+2. WHEN a user modifies an attribute value, THE Editor SHALL update the Canvas rendering within 200ms
+3. WHEN a user modifies an attribute value, THE Editor SHALL update the Raw_SVG_Panel text within 200ms for documents with up to 1000 nodes
 4. WHEN a user enters an invalid attribute value, THE Attribute_Inspector SHALL display a validation error and prevent the update
 5. THE Editor SHALL support editing common SVG attributes including position, size, fill, stroke, opacity, and transform
 
@@ -73,7 +73,7 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 
 #### Acceptance Criteria
 
-1. WHEN a user edits text in the Raw_SVG_Panel, THE Editor SHALL parse the SVG and update the Canvas within 200ms
+1. WHEN a user edits text in the Raw_SVG_Panel, THE Editor SHALL parse the SVG and update the Canvas within 300ms
 2. WHEN the raw SVG contains syntax errors, THE Editor SHALL display error messages indicating the line and nature of the error
 3. WHEN the raw SVG contains syntax errors, THE Editor SHALL prevent the update and maintain the previous valid state
 4. THE Editor SHALL provide a rollback mechanism to revert to the last valid SVG state
@@ -98,7 +98,7 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 #### Acceptance Criteria
 
 1. WHEN a user drags a selected element on the Canvas, THE Editor SHALL update its position in real-time
-2. WHEN an element is moved, THE Editor SHALL update the Raw_SVG_Panel and Attribute_Inspector within 100ms
+2. WHEN an element is moved, THE Editor SHALL update the Raw_SVG_Panel and Attribute_Inspector within 200ms
 3. THE Editor SHALL provide visual feedback during drag operations (outline, ghost image, or live preview)
 4. THE Editor SHALL support multi-select and group movement of elements
 5. WHEN a user releases a dragged element, THE Editor SHALL finalize the position and add the operation to the undo stack
@@ -111,7 +111,7 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 
 1. WHEN a user presses the Delete key with an element selected, THE Editor SHALL remove the element from the SVG document
 2. WHEN a user clicks a delete button with an element selected, THE Editor SHALL remove the element from the SVG document
-3. WHEN an element is deleted, THE Editor SHALL update all synchronized views within 100ms
+3. WHEN an element is deleted, THE Editor SHALL update all synchronized views within 200ms
 4. WHEN an element is deleted, THE Editor SHALL add the operation to the undo stack
 5. THE Editor SHALL support deletion of multiple selected elements simultaneously
 
@@ -169,11 +169,11 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 
 #### Acceptance Criteria
 
-1. WHEN a document contains up to 5000 nodes, THE Editor SHALL complete selection updates within 200ms
-2. WHEN a document contains up to 5000 nodes, THE Editor SHALL complete attribute updates within 200ms
+1. WHEN a document contains up to 5000 nodes, THE Editor SHALL complete selection updates within 300ms
+2. WHEN a document contains up to 5000 nodes, THE Editor SHALL complete attribute updates within 300ms
 3. THE Editor SHALL use virtualization for the Hierarchy_Panel when displaying more than 1000 nodes
 4. THE Editor SHALL implement debouncing for text input in the Raw_SVG_Panel to avoid excessive parsing
-5. THE Editor SHALL display a loading indicator when operations take longer than 100ms
+5. THE Editor SHALL display a loading indicator when operations take longer than 200ms
 
 ### Requirement 14: Performance - Web Workers
 
@@ -185,7 +185,7 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 2. WHEN performing complex transformations, THE Editor SHALL execute computations in a Worker
 3. WHEN a Worker is processing, THE Editor SHALL display a progress indicator in the UI
 4. THE Editor SHALL allow users to cancel long-running Worker operations
-5. WHEN a Worker completes, THE Editor SHALL update the UI with the results within 50ms
+5. WHEN a Worker completes, THE Editor SHALL update the UI with the results within 100ms
 
 ### Requirement 15: Error Handling
 

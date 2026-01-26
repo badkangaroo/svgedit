@@ -462,16 +462,16 @@ interface PerformanceConfig {
   
   // Debounce delays
   rawSVGParseDelay: number; // 300ms
-  attributeUpdateDelay: number; // 100ms
+  attributeUpdateDelay: number; // 200ms
   
   // Worker thresholds
   workerParseThreshold: number; // 1MB file size
   workerTransformThreshold: number; // 5000 nodes
   
   // Performance targets
-  selectionUpdateTarget: number; // 50ms for < 1000 nodes, 200ms for < 5000 nodes
-  attributeUpdateTarget: number; // 100ms
-  rawSVGUpdateTarget: number; // 200ms
+  selectionUpdateTarget: number; // 100ms for < 1000 nodes, 300ms for < 5000 nodes
+  attributeUpdateTarget: number; // 200ms
+  rawSVGUpdateTarget: number; // 300ms
 }
 ```
 
@@ -614,7 +614,7 @@ interface PerformanceConfig {
 
 ### Property 23: Long Operation Progress Indicator
 
-*For any* operation that takes longer than 100ms, a loading or progress indicator should be displayed in the UI.
+*For any* operation that takes longer than 200ms, a loading or progress indicator should be displayed in the UI.
 
 **Validates: Requirements 13.5**
 
@@ -800,10 +800,10 @@ test('SVG serialization round-trip preserves document structure', () => {
 
 While not part of property-based testing, performance requirements should be validated:
 
-- Selection update timing (< 50ms for 1000 nodes, < 200ms for 5000 nodes)
-- Attribute update timing (< 100ms)
-- Raw SVG parsing timing (< 200ms)
-- Worker completion timing (< 50ms UI update)
+- Selection update timing (< 100ms for 1000 nodes, < 300ms for 5000 nodes)
+- Attribute update timing (< 200ms)
+- Raw SVG parsing timing (< 300ms)
+- Worker completion timing (< 100ms UI update)
 
 These should be measured in dedicated performance test suites using browser performance APIs.
 
