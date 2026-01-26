@@ -36,10 +36,13 @@ export interface SelectionSyncCallbacks {
  * 
  * Manages selection state and synchronization across all editor views.
  * Uses reactive signals for automatic propagation of selection changes.
+ * Implements batched updates with requestAnimationFrame for performance.
  */
 export class SelectionManager {
   private syncCallbacks: SelectionSyncCallbacks = {};
   private disposeEffect: (() => void) | null = null;
+  private pendingSyncFrame: number | null = null;
+  private isSyncing = false;
 
   constructor() {
     // Set up automatic synchronization when selection changes
@@ -199,12 +202,38 @@ export class SelectionManager {
    * Sync selection to all views
    * 
    * Triggers synchronization across canvas, hierarchy, raw SVG, and inspector.
+   * Uses requestAnimationFrame to batch visual updates for better performance.
    */
   syncToAllViews(): void {
-    this.syncToCanvas();
-    this.syncToHierarchy();
-    this.syncToRawSVG();
-    this.syncToInspector();
+    // Cancel any pending sync frame
+    if (this.pendingSyncFrame !== null) {
+      cancelAnimationFrame(this.pendingSyncFrame);
+    }
+
+    // Schedule sync on next animation frame
+    this.pendingSyncFrame = requestAnimationFrame(() => {
+      this.pendingSyncFrame = null;
+      this.performSync();
+    });
+  }
+
+  /**
+   * Perform the actual synchronization to all views
+   * 
+   * This is called within requestAnimationFrame for optimal performance.
+   */
+  private performSync(): void {
+    if (this.isSyncing) return;
+    
+    this.isSyncing = true;
+    try {
+      this.syncToCanvas();
+      this.syncToHierarchy();
+      this.syncToRawSVG();
+      this.syncToInspector();
+    } finally {
+      this.isSyncing = false;
+    }
   }
 
   /**
@@ -247,6 +276,12 @@ export class SelectionManager {
    * Dispose of the selection manager and clean up resources
    */
   dispose(): void {
+    // Cancel any pending sync frame
+    if (this.pendingSyncFrame !== null) {
+      cancelAnimationFrame(this.pendingSyncFrame);
+      this.pendingSyncFrame = null;
+    }
+
     if (this.disposeEffect) {
       this.disposeEffect();
       this.disposeEffect = null;

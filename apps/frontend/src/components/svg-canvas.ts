@@ -194,8 +194,8 @@ export class SVGCanvas extends HTMLElement {
     this.disposeEffects.push(documentEffect);
 
     // Effect: Update selection visuals when selection changes
+    // Only track selectedElements to avoid unnecessary effect triggers
     const selectionEffect = effect(() => {
-      const selectedIds = documentState.selectedIds.get();
       const selectedElements = documentState.selectedElements.get();
       this.updateSelectionVisuals(selectedElements);
     });
@@ -274,17 +274,25 @@ export class SVGCanvas extends HTMLElement {
 
   /**
    * Update selection visual indicators
+   * 
+   * Optimized for large documents:
+   * - Uses DocumentFragment for batched DOM updates
+   * - Minimizes reflows by updating all at once
    */
   private updateSelectionVisuals(selectedElements: SVGElement[]) {
     if (!this.selectionOverlay) return;
 
-    // Clear existing selection visuals
-    this.selectionOverlay.innerHTML = '';
+    // Use DocumentFragment for batched DOM updates
+    const fragment = document.createDocumentFragment();
 
     // Draw selection indicators for each selected element
     selectedElements.forEach(element => {
-      this.drawSelectionIndicator(element);
+      this.drawSelectionIndicatorToFragment(element, fragment);
     });
+    
+    // Clear and update in a single operation
+    this.selectionOverlay.innerHTML = '';
+    this.selectionOverlay.appendChild(fragment);
     
     // Re-apply dragging class if currently dragging
     if (this.isDragging) {
@@ -294,11 +302,12 @@ export class SVGCanvas extends HTMLElement {
   }
 
   /**
-   * Draw selection indicator for a single element
+   * Draw selection indicator for a single element into a fragment
+   * 
+   * @param element - The SVG element to draw selection for
+   * @param fragment - The DocumentFragment to append to
    */
-  private drawSelectionIndicator(element: SVGElement) {
-    if (!this.selectionOverlay) return;
-
+  private drawSelectionIndicatorToFragment(element: SVGElement, fragment: DocumentFragment) {
     try {
       // Get the bounding box of the element
       // Note: getBBox may not be available in test environments (jsdom)
@@ -307,12 +316,12 @@ export class SVGCanvas extends HTMLElement {
         const bbox = this.getFallbackBBox(element);
         if (!bbox) return;
         
-        this.drawSelectionBox(bbox);
+        this.drawSelectionBoxToFragment(bbox, fragment);
         return;
       }
 
       const bbox = element.getBBox();
-      this.drawSelectionBox(bbox);
+      this.drawSelectionBoxToFragment(bbox, fragment);
     } catch (error) {
       // Some elements might not support getBBox (e.g., <defs>)
       console.warn('Could not draw selection indicator for element:', element, error);
@@ -321,43 +330,50 @@ export class SVGCanvas extends HTMLElement {
 
   /**
    * Get fallback bounding box from element attributes (for test environments)
+   * 
+   * Optimized for performance with early returns and minimal parsing.
    */
   private getFallbackBBox(element: SVGElement): DOMRect | null {
     const tagName = element.tagName.toLowerCase();
     
-    if (tagName === 'rect') {
-      const x = parseFloat(element.getAttribute('x') || '0');
-      const y = parseFloat(element.getAttribute('y') || '0');
-      const width = parseFloat(element.getAttribute('width') || '0');
-      const height = parseFloat(element.getAttribute('height') || '0');
-      return { x, y, width, height } as DOMRect;
+    // Fast path for common shapes
+    switch (tagName) {
+      case 'rect': {
+        const x = parseFloat(element.getAttribute('x') || '0');
+        const y = parseFloat(element.getAttribute('y') || '0');
+        const width = parseFloat(element.getAttribute('width') || '0');
+        const height = parseFloat(element.getAttribute('height') || '0');
+        return { x, y, width, height } as DOMRect;
+      }
+      
+      case 'circle': {
+        const cx = parseFloat(element.getAttribute('cx') || '0');
+        const cy = parseFloat(element.getAttribute('cy') || '0');
+        const r = parseFloat(element.getAttribute('r') || '0');
+        return { x: cx - r, y: cy - r, width: r * 2, height: r * 2 } as DOMRect;
+      }
+      
+      case 'ellipse': {
+        const cx = parseFloat(element.getAttribute('cx') || '0');
+        const cy = parseFloat(element.getAttribute('cy') || '0');
+        const rx = parseFloat(element.getAttribute('rx') || '0');
+        const ry = parseFloat(element.getAttribute('ry') || '0');
+        return { x: cx - rx, y: cy - ry, width: rx * 2, height: ry * 2 } as DOMRect;
+      }
+      
+      default:
+        // For other elements, return null (can't determine bbox)
+        return null;
     }
-    
-    if (tagName === 'circle') {
-      const cx = parseFloat(element.getAttribute('cx') || '0');
-      const cy = parseFloat(element.getAttribute('cy') || '0');
-      const r = parseFloat(element.getAttribute('r') || '0');
-      return { x: cx - r, y: cy - r, width: r * 2, height: r * 2 } as DOMRect;
-    }
-    
-    if (tagName === 'ellipse') {
-      const cx = parseFloat(element.getAttribute('cx') || '0');
-      const cy = parseFloat(element.getAttribute('cy') || '0');
-      const rx = parseFloat(element.getAttribute('rx') || '0');
-      const ry = parseFloat(element.getAttribute('ry') || '0');
-      return { x: cx - rx, y: cy - ry, width: rx * 2, height: ry * 2 } as DOMRect;
-    }
-    
-    // For other elements, return null (can't determine bbox)
-    return null;
   }
 
   /**
-   * Draw selection box with handles
+   * Draw selection box with handles into a fragment
+   * 
+   * @param bbox - The bounding box to draw selection for
+   * @param fragment - The DocumentFragment to append to
    */
-  private drawSelectionBox(bbox: DOMRect) {
-    if (!this.selectionOverlay) return;
-
+  private drawSelectionBoxToFragment(bbox: DOMRect, fragment: DocumentFragment) {
     // Create selection outline rectangle
     const outline = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     outline.classList.add('selection-outline');
@@ -366,7 +382,7 @@ export class SVGCanvas extends HTMLElement {
     outline.setAttribute('width', bbox.width.toString());
     outline.setAttribute('height', bbox.height.toString());
     
-    this.selectionOverlay.appendChild(outline);
+    fragment.appendChild(outline);
 
     // Create selection handles (corner and edge handles)
     const handleSize = 6;
@@ -385,7 +401,7 @@ export class SVGCanvas extends HTMLElement {
       handle.setAttribute('width', handleSize.toString());
       handle.setAttribute('height', handleSize.toString());
       
-      this.selectionOverlay.appendChild(handle);
+      fragment.appendChild(handle);
     });
   }
 

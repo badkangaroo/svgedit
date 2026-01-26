@@ -7,6 +7,9 @@
 
 import type { PanelLayout } from '../types';
 import { keyboardShortcutManager } from '../state/keyboard-shortcut-manager';
+import { fileManager } from '../utils/file-manager';
+import { documentState } from '../state/document-state';
+import { svgSerializer } from '../utils/svg-serializer';
 
 const DEFAULT_LAYOUT: PanelLayout = {
   hierarchyWidth: 250,
@@ -37,6 +40,10 @@ export class SVGEditorApp extends HTMLElement {
     
     // Attach keyboard shortcut manager
     keyboardShortcutManager.attach();
+
+    // Listen for save events from keyboard shortcuts
+    document.addEventListener('editor:save', this.handleSaveEvent);
+    document.addEventListener('editor:saveAs', this.handleSaveAsEvent);
   }
 
   disconnectedCallback() {
@@ -44,6 +51,10 @@ export class SVGEditorApp extends HTMLElement {
     
     // Detach keyboard shortcut manager
     keyboardShortcutManager.detach();
+
+    // Remove save event listeners
+    document.removeEventListener('editor:save', this.handleSaveEvent);
+    document.removeEventListener('editor:saveAs', this.handleSaveAsEvent);
   }
 
   private loadLayout() {
@@ -200,6 +211,59 @@ export class SVGEditorApp extends HTMLElement {
           outline-offset: 2px;
         }
 
+        .menu-dropdown {
+          position: relative;
+          display: inline-block;
+        }
+
+        .menu-dropdown-content {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background-color: var(--color-surface);
+          min-width: 200px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          border: 1px solid var(--color-outline);
+          border-radius: var(--radius-sm);
+          z-index: 1000;
+          margin-top: var(--spacing-xs);
+        }
+
+        .menu-dropdown-content.show {
+          display: block;
+        }
+
+        .menu-dropdown-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: none;
+          border: none;
+          color: var(--color-on-surface);
+          cursor: pointer;
+          text-align: left;
+          font-size: 14px;
+          transition: background-color var(--transition-fast);
+        }
+
+        .menu-dropdown-item:hover {
+          background-color: var(--color-surface-variant);
+        }
+
+        .menu-dropdown-item:focus-visible {
+          outline: 2px solid var(--color-primary);
+          outline-offset: -2px;
+        }
+
+        .menu-dropdown-item-shortcut {
+          margin-left: var(--spacing-lg);
+          color: var(--color-on-surface-variant);
+          font-size: 12px;
+        }
+
         .theme-toggle {
           display: flex;
           align-items: center;
@@ -217,7 +281,23 @@ export class SVGEditorApp extends HTMLElement {
       <div class="app-container">
         <!-- Menu Bar -->
         <div class="menu-bar">
-          <button class="menu-item" id="file-menu">File</button>
+          <div class="menu-dropdown">
+            <button class="menu-item" id="file-menu">File</button>
+            <div class="menu-dropdown-content" id="file-menu-dropdown">
+              <button class="menu-dropdown-item" id="file-open">
+                <span>Open...</span>
+                <span class="menu-dropdown-item-shortcut">Ctrl+O</span>
+              </button>
+              <button class="menu-dropdown-item" id="file-save">
+                <span>Save</span>
+                <span class="menu-dropdown-item-shortcut">Ctrl+S</span>
+              </button>
+              <button class="menu-dropdown-item" id="file-save-as">
+                <span>Save As...</span>
+                <span class="menu-dropdown-item-shortcut">Ctrl+Shift+S</span>
+              </button>
+            </div>
+          </div>
           <button class="menu-item" id="edit-menu">Edit</button>
           <button class="menu-item" id="view-menu">View</button>
           <button class="menu-item theme-toggle" id="theme-toggle" aria-label="Toggle theme">
@@ -276,12 +356,38 @@ export class SVGEditorApp extends HTMLElement {
       themeToggle.addEventListener('click', this.handleThemeToggle);
     }
 
+    // File menu dropdown toggle
+    const fileMenu = this.shadowRoot.querySelector('#file-menu');
+    if (fileMenu) {
+      fileMenu.addEventListener('click', this.handleFileMenuToggle);
+    }
+
+    // File menu items
+    const fileOpen = this.shadowRoot.querySelector('#file-open');
+    if (fileOpen) {
+      fileOpen.addEventListener('click', this.handleFileOpen);
+    }
+
+    const fileSave = this.shadowRoot.querySelector('#file-save');
+    if (fileSave) {
+      fileSave.addEventListener('click', this.handleFileSave);
+    }
+
+    const fileSaveAs = this.shadowRoot.querySelector('#file-save-as');
+    if (fileSaveAs) {
+      fileSaveAs.addEventListener('click', this.handleFileSaveAs);
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', this.handleDocumentClick);
+
     // Global mouse handlers for dragging
     document.addEventListener('mousemove', this.handleMouseMove);
     document.addEventListener('mouseup', this.handleMouseUp);
   }
 
   private detachEventListeners() {
+    document.removeEventListener('click', this.handleDocumentClick);
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   }
@@ -367,6 +473,144 @@ export class SVGEditorApp extends HTMLElement {
     // Re-render to update the icon and label
     this.render();
   };
+
+  private handleFileMenuToggle = (event: Event) => {
+    event.stopPropagation();
+    if (!this.shadowRoot) return;
+
+    const dropdown = this.shadowRoot.querySelector('#file-menu-dropdown');
+    if (dropdown) {
+      dropdown.classList.toggle('show');
+    }
+  };
+
+  private handleDocumentClick = () => {
+    // Close file menu dropdown when clicking outside
+    if (!this.shadowRoot) return;
+
+    const dropdown = this.shadowRoot.querySelector('#file-menu-dropdown');
+    if (dropdown && dropdown.classList.contains('show')) {
+      dropdown.classList.remove('show');
+    }
+  };
+
+  private handleFileOpen = async (event: Event) => {
+    event.stopPropagation();
+    this.closeAllDropdowns();
+
+    try {
+      const fileState = await fileManager.open();
+      console.log('File opened successfully:', fileState.name);
+      this.showNotification(`Opened: ${fileState.name}`, 'success');
+    } catch (error) {
+      if (error instanceof Error) {
+        // Don't show error for user cancellation
+        if (error.message.includes('cancelled')) {
+          return;
+        }
+        console.error('Failed to open file:', error);
+        this.showNotification(`Error: ${error.message}`, 'error');
+      }
+    }
+  };
+
+  private handleFileSave = async (event: Event) => {
+    event.stopPropagation();
+    this.closeAllDropdowns();
+    await this.performSave();
+  };
+
+  private handleFileSaveAs = async (event: Event) => {
+    event.stopPropagation();
+    this.closeAllDropdowns();
+    await this.performSaveAs();
+  };
+
+  private closeAllDropdowns() {
+    if (!this.shadowRoot) return;
+
+    const dropdowns = this.shadowRoot.querySelectorAll('.menu-dropdown-content');
+    dropdowns.forEach(dropdown => dropdown.classList.remove('show'));
+  }
+
+  private handleSaveEvent = async () => {
+    // Handle save event from keyboard shortcut
+    await this.performSave();
+  };
+
+  private handleSaveAsEvent = async () => {
+    // Handle save as event from keyboard shortcut
+    await this.performSaveAs();
+  };
+
+  private async performSave(): Promise<void> {
+    try {
+      // Get the current document
+      const doc = documentState.svgDocument.get();
+      if (!doc) {
+        this.showNotification('No document to save', 'error');
+        return;
+      }
+
+      // Serialize the document to SVG markup
+      const svgContent = svgSerializer.serialize(doc);
+
+      // Save the document
+      await fileManager.save(svgContent);
+      
+      const fileState = fileManager.getFileState();
+      console.log('File saved successfully:', fileState.name);
+      this.showNotification(`Saved: ${fileState.name || 'document.svg'}`, 'success');
+    } catch (error) {
+      if (error instanceof Error) {
+        // Don't show error for user cancellation
+        if (error.message.includes('cancelled')) {
+          return;
+        }
+        console.error('Failed to save file:', error);
+        this.showNotification(`Error: ${error.message}`, 'error');
+      }
+    }
+  }
+
+  private async performSaveAs(): Promise<void> {
+    try {
+      // Get the current document
+      const doc = documentState.svgDocument.get();
+      if (!doc) {
+        this.showNotification('No document to save', 'error');
+        return;
+      }
+
+      // Serialize the document to SVG markup
+      const svgContent = svgSerializer.serialize(doc);
+
+      // Save As the document
+      const fileState = await fileManager.saveAs(svgContent);
+      
+      console.log('File saved as:', fileState.name);
+      this.showNotification(`Saved as: ${fileState.name}`, 'success');
+    } catch (error) {
+      if (error instanceof Error) {
+        // Don't show error for user cancellation
+        if (error.message.includes('cancelled')) {
+          return;
+        }
+        console.error('Failed to save file:', error);
+        this.showNotification(`Error: ${error.message}`, 'error');
+      }
+    }
+  }
+
+  private showNotification(message: string, type: 'success' | 'error') {
+    // Simple notification implementation
+    // Could be enhanced with a proper notification system
+    if (type === 'error') {
+      alert(message);
+    } else {
+      console.log(message);
+    }
+  }
 
   private getCurrentTheme(): 'light' | 'dark' {
     const theme = document.documentElement.getAttribute('data-theme');

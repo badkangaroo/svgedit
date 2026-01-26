@@ -178,51 +178,71 @@ describe('SelectionManager', () => {
   });
 
   describe('Cross-View Synchronization', () => {
-    it('should call canvas sync callback when selection changes', () => {
+    it('should call canvas sync callback when selection changes', async () => {
       const onCanvasSync = vi.fn();
       manager.registerSyncCallbacks({ onCanvasSync });
       
       manager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onCanvasSync).toHaveBeenCalled();
       const event = onCanvasSync.mock.calls[0][0];
       expect(event.selectedIds.has('elem1')).toBe(true);
     });
 
-    it('should call hierarchy sync callback when selection changes', () => {
+    it('should call hierarchy sync callback when selection changes', async () => {
       const onHierarchySync = vi.fn();
       manager.registerSyncCallbacks({ onHierarchySync });
       
       manager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onHierarchySync).toHaveBeenCalled();
       const event = onHierarchySync.mock.calls[0][0];
       expect(event.selectedIds.has('elem1')).toBe(true);
     });
 
-    it('should call raw SVG sync callback when selection changes', () => {
+    it('should call raw SVG sync callback when selection changes', async () => {
       const onRawSVGSync = vi.fn();
       manager.registerSyncCallbacks({ onRawSVGSync });
       
       manager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onRawSVGSync).toHaveBeenCalled();
       const event = onRawSVGSync.mock.calls[0][0];
       expect(event.selectedIds.has('elem1')).toBe(true);
     });
 
-    it('should call inspector sync callback when selection changes', () => {
+    it('should call inspector sync callback when selection changes', async () => {
       const onInspectorSync = vi.fn();
       manager.registerSyncCallbacks({ onInspectorSync });
       
       manager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onInspectorSync).toHaveBeenCalled();
       const event = onInspectorSync.mock.calls[0][0];
       expect(event.selectedIds.has('elem1')).toBe(true);
     });
 
-    it('should call all sync callbacks when selection changes', () => {
+    it('should call all sync callbacks when selection changes', async () => {
       const onCanvasSync = vi.fn();
       const onHierarchySync = vi.fn();
       const onRawSVGSync = vi.fn();
@@ -237,39 +257,68 @@ describe('SelectionManager', () => {
       
       manager.select(['elem1']);
       
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+      
       expect(onCanvasSync).toHaveBeenCalled();
       expect(onHierarchySync).toHaveBeenCalled();
       expect(onRawSVGSync).toHaveBeenCalled();
       expect(onInspectorSync).toHaveBeenCalled();
     });
 
-    it('should sync automatically when selection is added', () => {
+    it('should sync automatically when selection is added', async () => {
       const onCanvasSync = vi.fn();
       manager.registerSyncCallbacks({ onCanvasSync });
       
       manager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+      
       const callCount1 = onCanvasSync.mock.calls.length;
       
       manager.addToSelection(['elem2']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+      
       const callCount2 = onCanvasSync.mock.calls.length;
       
       expect(callCount2).toBeGreaterThan(callCount1);
     });
 
-    it('should sync automatically when selection is cleared', () => {
+    it('should sync automatically when selection is cleared', async () => {
       const onCanvasSync = vi.fn();
       manager.registerSyncCallbacks({ onCanvasSync });
       
       manager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+      
       const callCount1 = onCanvasSync.mock.calls.length;
       
       manager.clearSelection();
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+      
       const callCount2 = onCanvasSync.mock.calls.length;
       
       expect(callCount2).toBeGreaterThan(callCount1);
     });
 
-    it('should provide selection data in sync events', () => {
+    it('should provide selection data in sync events', async () => {
       // Create a mock SVG document
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -291,6 +340,11 @@ describe('SelectionManager', () => {
       manager.registerSyncCallbacks({ onCanvasSync });
       
       manager.select(['rect1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       const event = onCanvasSync.mock.calls[onCanvasSync.mock.calls.length - 1][0];
       expect(event.selectedIds.has('rect1')).toBe(true);
@@ -347,7 +401,7 @@ describe('SelectionManager', () => {
       expect(onInspectorSync).toHaveBeenCalledTimes(1);
     });
 
-    it('should manually sync to all views', () => {
+    it('should manually sync to all views', async () => {
       const onCanvasSync = vi.fn();
       const onHierarchySync = vi.fn();
       const onRawSVGSync = vi.fn();
@@ -367,6 +421,11 @@ describe('SelectionManager', () => {
       onInspectorSync.mockClear();
       
       manager.syncToAllViews();
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onCanvasSync).toHaveBeenCalledTimes(1);
       expect(onHierarchySync).toHaveBeenCalledTimes(1);
@@ -422,13 +481,18 @@ describe('SelectionManager', () => {
       }).not.toThrow();
     });
 
-    it('should handle partial callback registration', () => {
+    it('should handle partial callback registration', async () => {
       const onCanvasSync = vi.fn();
       manager.registerSyncCallbacks({ onCanvasSync });
       
       expect(() => {
         manager.syncToAllViews();
       }).not.toThrow();
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onCanvasSync).toHaveBeenCalled();
     });
@@ -450,7 +514,7 @@ describe('SelectionManager', () => {
       expect(manager['syncCallbacks']).toEqual({});
     });
 
-    it('should allow creating new manager after disposing old one', () => {
+    it('should allow creating new manager after disposing old one', async () => {
       manager.dispose();
       
       const newManager = new SelectionManager();
@@ -458,6 +522,11 @@ describe('SelectionManager', () => {
       newManager.registerSyncCallbacks({ onCanvasSync });
       
       newManager.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onCanvasSync).toHaveBeenCalled();
     });
@@ -501,7 +570,7 @@ describe('SelectionManager', () => {
       expect(selectedIds.has('elem2')).toBe(true);
     });
 
-    it('should trigger sync when document state changes externally', () => {
+    it('should trigger sync when document state changes externally', async () => {
       const onCanvasSync = vi.fn();
       manager.registerSyncCallbacks({ onCanvasSync });
       
@@ -509,6 +578,11 @@ describe('SelectionManager', () => {
       
       // Change selection through document state updater
       documentStateUpdater.select(['elem1']);
+      
+      // Wait for requestAnimationFrame to complete
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
       
       expect(onCanvasSync).toHaveBeenCalled();
     });

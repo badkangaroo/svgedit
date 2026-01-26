@@ -23,6 +23,7 @@ export type ShortcutAction =
   | 'cut' 
   | 'paste' 
   | 'save'
+  | 'saveAs'
   | 'selectAll'
   | 'deselectAll';
 
@@ -175,6 +176,16 @@ export class KeyboardShortcutManager {
       [modifierKey]: true,
       action: 'save',
       description: `${this.isMac ? 'Cmd' : 'Ctrl'}+S: Save`,
+      preventDefault: true,
+    });
+
+    // Save As: Ctrl+Shift+S / Cmd+Shift+S
+    this.registerShortcut({
+      key: 's',
+      [modifierKey]: true,
+      shift: true,
+      action: 'saveAs',
+      description: `${this.isMac ? 'Cmd' : 'Ctrl'}+Shift+S: Save As`,
       preventDefault: true,
     });
 
@@ -376,6 +387,9 @@ export class KeyboardShortcutManager {
         case 'save':
           this.handleSave();
           break;
+        case 'saveAs':
+          this.handleSaveAs();
+          break;
         case 'selectAll':
           this.handleSelectAll();
           break;
@@ -507,6 +521,21 @@ export class KeyboardShortcutManager {
   }
 
   /**
+   * Handle save as action
+   * 
+   * Note: This is a placeholder that dispatches a custom event.
+   * The actual save logic should be implemented by the file manager.
+   */
+  private handleSaveAs(): void {
+    // Dispatch a custom event that the file manager can listen for
+    const event = new CustomEvent('editor:saveAs', {
+      bubbles: true,
+      composed: true,
+    });
+    document.dispatchEvent(event);
+  }
+
+  /**
    * Handle select all action
    * 
    * Note: This is a placeholder implementation.
@@ -550,7 +579,7 @@ export class KeyboardShortcutManager {
         ['selectAll', 'deselectAll', 'delete'].includes(s.action)
       ),
       'File': this.shortcuts.filter(s => 
-        ['save'].includes(s.action)
+        ['save', 'saveAs'].includes(s.action)
       ),
     };
   }

@@ -391,13 +391,15 @@ export class SVGHierarchyPanel extends HTMLElement {
 
   /**
    * Handle scroll event for virtual scrolling
+   * 
+   * Uses requestAnimationFrame to batch scroll updates for better performance.
    */
   private handleScroll() {
     if (!this.scrollContainer || !this.isVirtualized) return;
 
     this.scrollTop = this.scrollContainer.scrollTop;
 
-    // Use requestAnimationFrame to debounce scroll updates
+    // Use requestAnimationFrame to batch scroll updates
     requestAnimationFrame(() => {
       if (this.isVirtualized) {
         const tree = documentState.documentTree.get();
@@ -609,30 +611,68 @@ export class SVGHierarchyPanel extends HTMLElement {
 
   /**
    * Update selection highlights in the tree
+   * 
+   * Optimized for large documents:
+   * - Uses classList operations in batch
+   * - Minimizes DOM queries with caching
+   * - Batches parent node expansion to avoid multiple tree updates
    */
   private updateSelectionHighlights(selectedIds: Set<string>) {
     if (!this.treeContainer) return;
 
-    // Remove all existing selection highlights
+    // Batch DOM operations for better performance
     const allNodes = this.treeContainer.querySelectorAll('.node-content');
+    const selectedIdsArray = Array.from(selectedIds);
+    
+    // First pass: Remove all selection highlights
+    // Use a single batch operation
     allNodes.forEach(node => {
       node.classList.remove('selected');
     });
 
-    // Add selection highlights to selected nodes
-    selectedIds.forEach(id => {
-      const node = this.treeContainer!.querySelector(`.node-content[data-node-id="${id}"]`);
+    // Second pass: Add selection highlights to selected nodes
+    // Build a map for O(1) lookups instead of repeated querySelector calls
+    const nodeMap = new Map<string, Element>();
+    allNodes.forEach(node => {
+      const nodeId = node.getAttribute('data-node-id');
+      if (nodeId) {
+        nodeMap.set(nodeId, node);
+      }
+    });
+
+    // Apply selection highlights using the map
+    selectedIdsArray.forEach(id => {
+      const node = nodeMap.get(id);
       if (node) {
         node.classList.add('selected');
       }
-      
-      // Auto-expand parent nodes to make selection visible
-      this.expandParentNodes(id);
     });
+
+    // Batch parent node expansion - collect all parent IDs first
+    const tree = documentState.documentTree.get();
+    const allParentIds = new Set<string>();
+    selectedIdsArray.forEach(id => {
+      const parentIds = this.findParentNodes(id, tree);
+      parentIds.forEach(parentId => allParentIds.add(parentId));
+    });
+
+    // Expand all parent nodes at once
+    let needsUpdate = false;
+    allParentIds.forEach(parentId => {
+      if (!this.expandedNodes.has(parentId)) {
+        this.expandedNodes.add(parentId);
+        needsUpdate = true;
+      }
+    });
+
+    // Only update tree once if needed and not in virtual scrolling mode
+    if (needsUpdate && !this.isVirtualized) {
+      this.updateTree(tree);
+    }
 
     // If using virtual scrolling, scroll to first selected node
     if (this.isVirtualized && selectedIds.size > 0 && this.scrollContainer) {
-      const firstSelectedId = Array.from(selectedIds)[0];
+      const firstSelectedId = selectedIdsArray[0];
       this.scrollToNode(firstSelectedId);
     }
   }
@@ -658,6 +698,8 @@ export class SVGHierarchyPanel extends HTMLElement {
 
   /**
    * Expand parent nodes to make a node visible
+   * 
+   * Optimized to avoid unnecessary tree updates.
    */
   private expandParentNodes(nodeId: string) {
     const tree = documentState.documentTree.get();
@@ -671,7 +713,9 @@ export class SVGHierarchyPanel extends HTMLElement {
       }
     });
 
-    if (needsUpdate) {
+    // Only update tree if we actually expanded new nodes
+    // AND we're not in virtual scrolling mode (which handles this differently)
+    if (needsUpdate && !this.isVirtualized) {
       this.updateTree(tree);
     }
   }

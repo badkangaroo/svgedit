@@ -78,7 +78,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 3: Theme persistence round-trip**
     - **Validates: Requirements 2.4, 2.5**
 
-- [~] 5. Sprint 1 Checkpoint
+- [ ] 5. Sprint 1 Checkpoint
   - Verify editor shell displays all panels (menu, canvas, hierarchy, inspector, tools)
   - Verify theme toggle switches between light and dark modes
   - Verify contrast ratios meet 4.5:1 for body text
@@ -320,7 +320,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Handle platform differences (Ctrl vs Cmd)
     - _Requirements: 9.4, 10.1, 10.2, 10.3, 10.4, 12.5_
   
-  - [~]* 17.2 Write unit tests for keyboard shortcuts
+  - [ ]* 17.2 Write unit tests for keyboard shortcuts
     - Test undo/redo shortcuts (Ctrl+Z, Ctrl+Shift+Z)
     - Test delete shortcuts (Delete, Backspace)
     - Test selection shortcuts (arrow keys, Tab)
@@ -328,13 +328,13 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Test save shortcut (Ctrl+S)
     - _Requirements: 9.4, 10.1, 10.2, 10.3, 10.4, 12.5_
   
-  - [~] 17.3 Create keyboard shortcuts reference panel
+  - [x] 17.3 Create keyboard shortcuts reference panel
     - Build modal or panel displaying all shortcuts
     - Make accessible from menu
     - _Requirements: 10.5_
 
 - [ ] 18. Implement file operations
-  - [~] 18.1 Create file manager with open functionality
+  - [x] 18.1 Create file manager with open functionality
     - Implement FileManager class
     - Add file open dialog in menu
     - Use File System Access API where supported
@@ -346,14 +346,14 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 21: File load parses content**
     - **Validates: Requirements 11.2, 11.5**
   
-  - [~] 18.3 Implement save and save-as functionality
+  - [x] 18.3 Implement save and save-as functionality
     - Add save and save-as options in menu
     - Use File System Access API to save to file handle
     - Fall back to download for unsupported browsers
     - Serialize document to valid SVG markup
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
   
-  - [~]* 18.4 Write unit tests for file operations
+  - [ ]* 18.4 Write unit tests for file operations
     - Test file open with File System Access API
     - Test file open fallback with file input
     - Test save with File System Access API
@@ -361,7 +361,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Test save keyboard shortcut
     - _Requirements: 11.3, 11.4, 12.2, 12.3, 12.5_
 
-- [~] 19. Sprint 3 Checkpoint
+- [x] 19. Sprint 3 Checkpoint
   - Verify create/move/delete primitives work with undo/redo
   - Verify keyboard shortcuts for selection, delete, undo/redo
   - Verify open/save via browser download and File System Access API
@@ -371,19 +371,19 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
 ### Sprint 4: Performance and Stability
 
 - [ ] 20. Implement Web Worker support
-  - [~] 20.1 Create Web Worker for SVG parsing
+  - [ ] 20.1 Create Web Worker for SVG parsing
     - Set up worker file for parsing large SVG documents
     - Implement parseInWorker() method in SVGParser
     - Use worker for documents > 1MB
     - _Requirements: 14.1_
   
-  - [~] 20.2 Create Web Worker for transformations
+  - [ ] 20.2 Create Web Worker for transformations
     - Set up worker file for complex transformations
     - Implement transform operations in worker
     - Use worker for documents > 5000 nodes
     - _Requirements: 14.2_
   
-  - [~] 20.3 Implement progress indicators for workers
+  - [ ] 20.3 Implement progress indicators for workers
     - Display progress UI when workers are processing
     - Update progress percentage during worker operations
     - _Requirements: 14.3_
@@ -392,7 +392,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 24: Worker progress feedback**
     - **Validates: Requirements 14.3**
   
-  - [~] 20.5 Implement worker cancellation
+  - [ ] 20.5 Implement worker cancellation
     - Add cancel button to progress UI
     - Terminate worker on cancellation
     - Return UI to interactive state
@@ -403,7 +403,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 14.4**
 
 - [ ] 21. Implement performance optimizations
-  - [~] 21.1 Add loading indicators for long operations
+  - [ ] 21.1 Add loading indicators for long operations
     - Display loading indicator when operations exceed 100ms
     - Use spinner or progress bar
     - _Requirements: 13.5_
@@ -412,19 +412,19 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 23: Long operation progress indicator**
     - **Validates: Requirements 13.5**
   
-  - [~] 21.3 Optimize selection updates for large documents
+  - [x] 21.3 Optimize selection updates for large documents
     - Implement efficient selection update algorithms
     - Use requestAnimationFrame for visual updates
     - Batch DOM updates
     - _Requirements: 13.1_
   
-  - [~] 21.4 Optimize attribute updates for large documents
+  - [-] 21.4 Optimize attribute updates for large documents
     - Implement efficient attribute update algorithms
     - Debounce rapid attribute changes
     - _Requirements: 13.2_
 
 - [ ] 22. Implement comprehensive error handling
-  - [~] 22.1 Add global error handler
+  - [ ] 22.1 Add global error handler
     - Catch unhandled exceptions
     - Display error notifications to user
     - Log errors to console
@@ -439,7 +439,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 29: Error recovery**
     - **Validates: Requirements 15.5**
   
-  - [~] 22.4 Implement file operation error handling
+  - [ ] 22.4 Implement file operation error handling
     - Catch file system errors
     - Display user-friendly error messages
     - Provide retry options
@@ -469,7 +469,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Test error handling and recovery
     - _Requirements: 16.1, 16.2_
 
-- [~] 24. Sprint 4 Checkpoint and Final Review
+- [ ] 24. Sprint 4 Checkpoint and Final Review
   - Verify large SVGs remain interactive (< 200ms selection updates)
   - Verify expensive operations run in workers with progress UI
   - Verify E2E tests cover cross-view sync and undo/redo
