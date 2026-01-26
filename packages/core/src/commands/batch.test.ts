@@ -136,6 +136,7 @@ describe('BatchCommand', () => {
           subCommandIndex: 1,
           totalCommands: 3,
           executedCommands: 1, // Only the first command executed
+          rolledBack: true,
         });
       }
     });
@@ -303,10 +304,9 @@ describe('BatchCommand', () => {
       const executeResult = batch.execute(doc);
       expect(executeResult.ok).toBe(false);
       
-      // Even though execution failed, we should be able to undo the partial execution
-      // However, since execute failed, the document wasn't modified by the batch
-      // The first command succeeded but we need to get the intermediate document
-      // In this case, the batch tracks executedCommands internally
+      // Execution should be atomic; no changes should be applied
+      expect(doc.root.children.length).toBe(0);
+      expect(batch.canUndo(doc)).toBe(false);
     });
   });
   

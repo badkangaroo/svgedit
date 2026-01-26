@@ -9,6 +9,7 @@ export type { ErrorDetails } from './result.js';
 
 export type {
   SVGElementType,
+  SVGNodeType,
   SVGNode,
   RectNode,
   CircleNode,
@@ -25,7 +26,13 @@ export type {
   SpecificSVGNode
 } from './node.js';
 
+export {
+  KNOWN_ELEMENT_TYPES,
+  isKnownElementType
+} from './node.js';
+
 export type {
   SVGDocument,
-  ParseError
+  ParseError,
+  ParseWarning
 } from './document.js';

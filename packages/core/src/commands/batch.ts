@@ -18,7 +18,7 @@ import { ErrorCode } from '../types/result.js';
  * This command:
  * - Executes all sub-commands in order
  * - Stops execution on the first failure
- * - Undoes all executed sub-commands in reverse order
+ * - Rolls back any executed sub-commands in reverse order (atomic)
  * - Provides atomic undo/redo for complex operations
  * 
  * The batch command is useful for operations that require multiple steps,
@@ -120,11 +120,11 @@ export class BatchCommand implements Command {
    * 3. Stops execution on the first failure
    * 4. Tracks which commands were successfully executed for undo
    * 
-   * If any sub-command fails:
-   * - Execution stops immediately
-   * - An error is returned
-   * - The document is left in a partially modified state
-   * - Only successfully executed commands can be undone
+ * If any sub-command fails:
+ * - Execution stops immediately
+ * - An error is returned
+ * - All previously executed sub-commands are rolled back
+ * - The document remains unchanged (atomic behavior)
    * 
    * @param document - The current document state
    * @returns Result containing the updated document or an error
@@ -151,9 +151,35 @@ export class BatchCommand implements Command {
       const result = command.execute(currentDocument);
       
       if (!result.ok) {
-        // Command failed - return error
-        // Note: executedCommands contains only the commands that succeeded
-        this.executed = true; // Mark as executed so partial undo is possible
+        // Command failed - roll back any executed commands (atomic behavior)
+        const executedCount = this.executedCommands.length;
+        let rollbackDocument = currentDocument;
+        let rollbackFailed: CommandError | null = null;
+
+        for (let j = this.executedCommands.length - 1; j >= 0; j--) {
+          const executedCommand = this.executedCommands[j];
+          if (!executedCommand) {
+            continue;
+          }
+
+          const undoResult = executedCommand.undo(rollbackDocument);
+          if (!undoResult.ok) {
+            rollbackFailed = undoResult.error;
+            break;
+          }
+
+          rollbackDocument = undoResult.value;
+        }
+
+        if (!rollbackFailed) {
+          // Rollback succeeded - reset execution state
+          this.executedCommands = [];
+          this.executed = false;
+        } else {
+          // Rollback failed - keep state to allow inspection
+          this.executed = true;
+        }
+
         return {
           ok: false,
           error: {
@@ -164,7 +190,9 @@ export class BatchCommand implements Command {
               ...(result.error.context as object | undefined),
               subCommandIndex: i,
               totalCommands: this.commands.length,
-              executedCommands: this.executedCommands.length,
+              executedCommands: executedCount,
+              rolledBack: rollbackFailed === null,
+              rollbackError: rollbackFailed ?? undefined,
             },
           },
         };

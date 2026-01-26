@@ -133,6 +133,29 @@ describe('Parser', () => {
       }
     });
   });
+
+  describe('Unknown elements', () => {
+    it('should preserve unknown elements and emit warnings', () => {
+      const parser = new Parser();
+      const result = parser.parse('<svg><custom-element foo="bar" /></svg>');
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        const document = result.value;
+        expect(document.root.children.length).toBe(1);
+        expect(document.root.children[0].type).toBe('custom-element');
+        expect(document.root.children[0].attributes.get('foo')).toBe('bar');
+
+        expect(document.warnings?.length).toBeGreaterThan(0);
+        expect(document.warnings?.[0]).toMatchObject({
+          code: 'UNKNOWN_ELEMENT',
+          elementName: 'custom-element'
+        });
+
+        expect(document.unknownElements).toContain('custom-element');
+      }
+    });
+  });
   
   describe('Stable ID generation', () => {
     it('should assign unique IDs to all nodes', () => {

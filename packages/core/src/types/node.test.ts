@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { KNOWN_ELEMENT_TYPES } from './node.js';
 import type { SVGNode, SVGElementType, RectNode, CircleNode, PathNode } from './node.js';
 
 describe('SVGNode types', () => {
@@ -96,11 +97,7 @@ describe('SVGNode types', () => {
   });
   
   it('should support all element types', () => {
-    const types: SVGElementType[] = [
-      'svg', 'rect', 'circle', 'ellipse', 'line',
-      'polyline', 'polygon', 'path', 'text',
-      'g', 'defs', 'use'
-    ];
+    const types: SVGElementType[] = [...KNOWN_ELEMENT_TYPES];
     
     types.forEach(type => {
       const node: SVGNode = {

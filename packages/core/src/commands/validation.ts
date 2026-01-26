@@ -8,6 +8,7 @@
  */
 
 import type { SVGDocument } from '../types/document.js';
+import { KNOWN_ELEMENT_TYPES } from '../types/node.js';
 import type { CommandError } from './command.js';
 import { ErrorCode } from '../types/result.js';
 
@@ -196,40 +197,13 @@ export function validateElementType(
     };
   }
   
-  // Valid SVG element types (can be extended)
-  const validTypes = [
-    'svg',
-    'rect',
-    'circle',
-    'ellipse',
-    'line',
-    'polyline',
-    'polygon',
-    'path',
-    'text',
-    'tspan',
-    'g',
-    'defs',
-    'use',
-    'image',
-    'clipPath',
-    'mask',
-    'pattern',
-    'linearGradient',
-    'radialGradient',
-    'stop',
-    'symbol',
-    'marker',
-    'filter',
-  ];
-  
-  if (!validTypes.includes(elementType)) {
+  if (!KNOWN_ELEMENT_TYPES.includes(elementType as (typeof KNOWN_ELEMENT_TYPES)[number])) {
     return {
       valid: false,
       error: {
         code: ErrorCode.VALIDATION_FAILED,
         message: `Unknown element type: "${elementType}". This may not be a valid SVG element.`,
-        context: { elementType, validTypes },
+        context: { elementType, validTypes: KNOWN_ELEMENT_TYPES },
       },
     };
   }

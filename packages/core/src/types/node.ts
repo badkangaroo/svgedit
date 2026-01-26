@@ -1,20 +1,51 @@
 /**
+ * Known SVG element types supported by the core engine.
+ * This list is used for validation and warnings (unknown elements are preserved).
+ */
+export const KNOWN_ELEMENT_TYPES = [
+  'svg',
+  'rect',
+  'circle',
+  'ellipse',
+  'line',
+  'polyline',
+  'polygon',
+  'path',
+  'text',
+  'tspan',
+  'g',
+  'defs',
+  'use',
+  'image',
+  'clipPath',
+  'mask',
+  'pattern',
+  'linearGradient',
+  'radialGradient',
+  'stop',
+  'symbol',
+  'marker',
+  'filter'
+] as const;
+
+/**
  * SVG element types supported by the core engine.
  * This is a discriminated union type for type-safe element handling.
  */
-export type SVGElementType = 
-  | 'svg'
-  | 'rect'
-  | 'circle'
-  | 'ellipse'
-  | 'line'
-  | 'polyline'
-  | 'polygon'
-  | 'path'
-  | 'text'
-  | 'g'
-  | 'defs'
-  | 'use';
+export type SVGElementType = typeof KNOWN_ELEMENT_TYPES[number];
+
+/**
+ * SVG node type that allows unknown/custom elements.
+ * Unknown elements are preserved for round-trip compatibility.
+ */
+export type SVGNodeType = SVGElementType | (string & {});
+
+/**
+ * Type guard for known SVG element types.
+ */
+export function isKnownElementType(value: string): value is SVGElementType {
+  return (KNOWN_ELEMENT_TYPES as readonly string[]).includes(value);
+}
 
 /**
  * Base interface for all SVG nodes in the document tree.
@@ -25,7 +56,7 @@ export interface SVGNode {
   id: string;
   
   /** Element type (rect, circle, path, etc.) */
-  type: SVGElementType;
+  type: SVGNodeType;
   
   /** Element attributes as key-value pairs */
   attributes: Map<string, string>;

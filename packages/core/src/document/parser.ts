@@ -5,8 +5,9 @@
  * This is the foundation for SVG document parsing.
  */
 
-import type { SVGNode, SVGElementType } from '../types/node.js';
-import type { SVGDocument, ParseError } from '../types/document.js';
+import type { SVGNode, SVGNodeType } from '../types/node.js';
+import { isKnownElementType } from '../types/node.js';
+import type { SVGDocument, ParseError, ParseWarning } from '../types/document.js';
 import type { Result } from '../types/result.js';
 
 /**
@@ -365,9 +366,11 @@ export class Parser {
       
       const tokenizer = new XMLTokenizer(svgText);
       const nodes = new Map<string, SVGNode>();
+      const warnings: ParseWarning[] = [];
+      const unknownElements = new Set<string>();
       
       // Parse the root element
-      const root = this.parseElement(tokenizer, null, nodes);
+      const root = this.parseElement(tokenizer, null, nodes, warnings, unknownElements);
       
       if (!root) {
         return {
@@ -398,7 +401,9 @@ export class Parser {
         value: {
           root,
           nodes,
-          version: 0
+          version: 0,
+          warnings,
+          unknownElements: Array.from(unknownElements)
         }
       };
     } catch (error) {
@@ -427,7 +432,9 @@ export class Parser {
   private parseElement(
     tokenizer: XMLTokenizer,
     parent: SVGNode | null,
-    nodes: Map<string, SVGNode>
+    nodes: Map<string, SVGNode>,
+    warnings: ParseWarning[],
+    unknownElements: Set<string>
   ): SVGNode | null {
     const token = tokenizer.nextToken();
     
@@ -437,7 +444,7 @@ export class Parser {
     
     if (token.type === 'text') {
       // Skip text nodes for now (we'll handle them in a future task)
-      return this.parseElement(tokenizer, parent, nodes);
+      return this.parseElement(tokenizer, parent, nodes, warnings, unknownElements);
     }
     
     if (token.type !== 'open' && token.type !== 'self-close') {
@@ -448,11 +455,13 @@ export class Parser {
       } as ParseError;
     }
     
+    this.recordUnknownElement(token, warnings, unknownElements);
+
     // Create the node
     const id = this.idGenerator.generate();
     const node: SVGNode = {
       id,
-      type: token.name as SVGElementType,
+      type: token.name as SVGNodeType,
       attributes: token.attributes || new Map(),
       children: [],
       parent
@@ -496,9 +505,11 @@ export class Parser {
       if (nextToken.type === 'open' || nextToken.type === 'self-close') {
         // Parse child element
         const childId = this.idGenerator.generate();
+        this.recordUnknownElement(nextToken, warnings, unknownElements);
+
         const child: SVGNode = {
           id: childId,
-          type: nextToken.name as SVGElementType,
+          type: nextToken.name as SVGNodeType,
           attributes: nextToken.attributes || new Map(),
           children: [],
           parent: node
@@ -509,7 +520,7 @@ export class Parser {
         
         // If not self-closing, parse children recursively
         if (nextToken.type === 'open') {
-          this.parseChildren(tokenizer, child, nextToken.name!, nodes);
+          this.parseChildren(tokenizer, child, nextToken.name!, nodes, warnings, unknownElements);
         }
       }
     }
@@ -524,7 +535,9 @@ export class Parser {
     tokenizer: XMLTokenizer,
     parent: SVGNode,
     parentTagName: string,
-    nodes: Map<string, SVGNode>
+    nodes: Map<string, SVGNode>,
+    warnings: ParseWarning[],
+    unknownElements: Set<string>
   ): void {
     while (true) {
       const token = tokenizer.nextToken();
@@ -556,9 +569,11 @@ export class Parser {
       if (token.type === 'open' || token.type === 'self-close') {
         // Create child node
         const childId = this.idGenerator.generate();
+        this.recordUnknownElement(token, warnings, unknownElements);
+
         const child: SVGNode = {
           id: childId,
-          type: token.name as SVGElementType,
+          type: token.name as SVGNodeType,
           attributes: token.attributes || new Map(),
           children: [],
           parent
@@ -569,10 +584,36 @@ export class Parser {
         
         // If not self-closing, parse children recursively
         if (token.type === 'open') {
-          this.parseChildren(tokenizer, child, token.name!, nodes);
+          this.parseChildren(tokenizer, child, token.name!, nodes, warnings, unknownElements);
         }
       }
     }
+  }
+
+  /**
+   * Record an unknown element warning without interrupting parsing.
+   */
+  private recordUnknownElement(
+    token: Token,
+    warnings: ParseWarning[],
+    unknownElements: Set<string>
+  ): void {
+    if (!token.name) {
+      return;
+    }
+
+    if (isKnownElementType(token.name)) {
+      return;
+    }
+
+    unknownElements.add(token.name);
+    warnings.push({
+      code: 'UNKNOWN_ELEMENT',
+      message: `Unknown SVG element "${token.name}" encountered during parsing`,
+      line: token.line,
+      column: token.column,
+      elementName: token.name
+    });
   }
   
   /**
