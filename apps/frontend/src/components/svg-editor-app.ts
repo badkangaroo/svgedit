@@ -258,7 +258,7 @@ export class SVGEditorApp extends HTMLElement {
 
         <!-- Hierarchy Panel -->
         <div class="hierarchy-panel">
-          <div class="panel-placeholder">Hierarchy Panel</div>
+          <svg-hierarchy-panel></svg-hierarchy-panel>
         </div>
 
         <!-- Hierarchy Divider -->
@@ -283,7 +283,7 @@ export class SVGEditorApp extends HTMLElement {
               </svg>
             </button>
           </div>
-          <div class="panel-placeholder">Canvas Area</div>
+          <svg-canvas></svg-canvas>
         </div>
 
         <!-- Inspector Divider -->

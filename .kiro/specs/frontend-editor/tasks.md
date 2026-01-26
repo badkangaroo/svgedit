@@ -94,7 +94,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Implement state update functions
     - _Requirements: 3.1-3.5, 4.1_
   
-  - [~] 6.2 Implement SVG parser
+  - [x] 6.2 Implement SVG parser
     - Create parser to convert SVG text to DocumentNode tree
     - Use DOMParser for initial parsing
     - Assign unique IDs to all elements
@@ -105,7 +105,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Property 8: SVG parse error reporting**
     - **Validates: Requirements 5.2, 15.1**
   
-  - [~] 6.4 Implement SVG serializer
+  - [x] 6.4 Implement SVG serializer
     - Create serializer to convert document tree to SVG text
     - Format with proper indentation
     - Clean up editor-specific attributes
@@ -116,7 +116,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 12.4**
 
 - [ ] 7. Implement selection manager
-  - [~] 7.1 Create selection manager with cross-view sync
+  - [x] 7.1 Create selection manager with cross-view sync
     - Implement SelectionManager class with signal-based selection state
     - Create methods for select, addToSelection, clearSelection
     - Implement sync methods for canvas, hierarchy, raw SVG, and inspector
@@ -127,33 +127,33 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.5**
 
 - [ ] 8. Implement canvas component
-  - [~] 8.1 Create canvas component with SVG rendering
+  - [x] 8.1 Create canvas component with SVG rendering
     - Build `<svg-canvas>` component that renders SVG document
     - Subscribe to document state signal for updates
     - Implement selection visual indicators (outlines, handles)
     - Handle mouse events for selection
     - _Requirements: 1.1, 3.1_
   
-  - [~] 8.2 Wire canvas selection to selection manager
+  - [x] 8.2 Wire canvas selection to selection manager
     - Connect canvas click events to selection manager
     - Update canvas visuals when selection changes
     - Support multi-select with Ctrl/Cmd key
     - _Requirements: 3.1, 3.5_
 
 - [ ] 9. Implement hierarchy panel component
-  - [~] 9.1 Create hierarchy panel with tree view
+  - [x] 9.1 Create hierarchy panel with tree view
     - Build `<svg-hierarchy-panel>` component displaying document tree
     - Subscribe to document state signal for updates
     - Implement expand/collapse functionality
     - Highlight selected nodes
     - _Requirements: 1.1, 3.2_
   
-  - [~] 9.2 Implement virtual scrolling for large documents
+  - [x] 9.2 Implement virtual scrolling for large documents
     - Add virtual scrolling when node count exceeds 1000
     - Render only visible nodes for performance
     - _Requirements: 13.3_
   
-  - [~] 9.3 Wire hierarchy selection to selection manager
+  - [x] 9.3 Wire hierarchy selection to selection manager
     - Connect node click events to selection manager
     - Update hierarchy highlights when selection changes
     - _Requirements: 3.2_

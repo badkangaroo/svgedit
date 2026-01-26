@@ -45,11 +45,42 @@ The component uses Shadow DOM for style encapsulation and automatically register
 - Unit tests in `svg-editor-app.test.ts`
 - Tests cover initialization, layout persistence, theme toggle, panel resizing, and accessibility
 
+### `<svg-canvas>` - SVG Canvas Component ✅
+
+The visual rendering area for SVG documents with interactive selection capabilities.
+
+**Features:**
+- **SVG Rendering**: Displays SVG documents from document state
+- **Selection Indicators**: Visual outlines and handles for selected elements
+- **Hover Effects**: Highlights elements on mouse hover
+- **Mouse Interactions**: Click to select, Ctrl/Cmd+Click for multi-select
+- **Reactive Updates**: Automatically updates when document or selection changes
+- **Empty State**: Shows helpful message when no document is loaded
+
+**Usage:**
+```html
+<svg-canvas></svg-canvas>
+```
+
+**Implementation Details:**
+- Subscribes to document state signals for automatic updates
+- Uses separate SVG overlay for selection indicators
+- Clones SVG document to avoid modifying original
+- Handles getBBox fallback for test environments
+- Integrates with selection manager for cross-view sync
+
+**Testing:**
+- Unit tests in `svg-canvas.test.ts`
+- Tests cover rendering, selection visuals, mouse interactions, and reactive updates
+- 10 tests, all passing
+
+**Requirements:** 1.1, 3.1  
+**Task:** 8.1 ✅ Complete
+
 ## Future Components
 
 The following components will be added in future tasks:
 
-- `<svg-canvas>` - Visual SVG rendering and interaction
 - `<svg-hierarchy-panel>` - Tree view of document structure
 - `<svg-raw-panel>` - Text editor for raw SVG markup
 - `<svg-attribute-inspector>` - Form-based attribute editing

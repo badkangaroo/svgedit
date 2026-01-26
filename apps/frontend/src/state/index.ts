@@ -13,3 +13,9 @@ export {
   type DocumentState,
   type DocumentStateUpdater,
 } from './document-state';
+export {
+  SelectionManager,
+  selectionManager,
+  type SelectionChangeEvent,
+  type SelectionSyncCallbacks,
+} from './selection-manager';
