@@ -456,6 +456,98 @@ describe('FileManager', () => {
     });
   });
 
+  describe('New document functionality', () => {
+    it('should create a blank SVG document', async () => {
+      // Create a new document
+      const fileState = await fileManager.new();
+
+      // Verify file state is reset
+      expect(fileState.handle).toBeNull();
+      expect(fileState.name).toBe('');
+      expect(fileState.isDirty).toBe(false);
+      expect(fileState.lastSaved).toBeNull();
+
+      // Verify document state was updated with blank SVG
+      const doc = documentState.svgDocument.get();
+      expect(doc).not.toBeNull();
+      expect(doc?.tagName.toLowerCase()).toBe('svg');
+      expect(doc?.getAttribute('width')).toBe('800');
+      expect(doc?.getAttribute('height')).toBe('600');
+
+      const rawSVG = documentState.rawSVG.get();
+      expect(rawSVG).toContain('<svg');
+      expect(rawSVG).toContain('width="800"');
+      expect(rawSVG).toContain('height="600"');
+    });
+
+    it('should prompt for confirmation when there are unsaved changes', async () => {
+      // Mark document as dirty
+      fileManager.markDirty();
+
+      // Mock window.confirm to return false (user cancels)
+      const originalConfirm = window.confirm;
+      window.confirm = vi.fn().mockReturnValue(false);
+
+      // Try to create new document
+      await expect(fileManager.new()).rejects.toThrow('cancelled');
+
+      // Verify confirm was called
+      expect(window.confirm).toHaveBeenCalledWith(
+        expect.stringContaining('unsaved changes')
+      );
+
+      // Restore
+      window.confirm = originalConfirm;
+    });
+
+    it('should create new document when user confirms despite unsaved changes', async () => {
+      // Mark document as dirty
+      fileManager.markDirty();
+
+      // Mock window.confirm to return true (user confirms)
+      const originalConfirm = window.confirm;
+      window.confirm = vi.fn().mockReturnValue(true);
+
+      // Create new document
+      const fileState = await fileManager.new();
+
+      // Verify confirm was called
+      expect(window.confirm).toHaveBeenCalled();
+
+      // Verify new document was created
+      expect(fileState.handle).toBeNull();
+      expect(fileState.name).toBe('');
+      expect(fileState.isDirty).toBe(false);
+
+      // Verify document state
+      const doc = documentState.svgDocument.get();
+      expect(doc).not.toBeNull();
+      expect(doc?.tagName.toLowerCase()).toBe('svg');
+
+      // Restore
+      window.confirm = originalConfirm;
+    });
+
+    it('should not prompt when there are no unsaved changes', async () => {
+      // Ensure document is not dirty
+      const fileState = fileManager.getFileState();
+      expect(fileState.isDirty).toBe(false);
+
+      // Mock window.confirm
+      const originalConfirm = window.confirm;
+      window.confirm = vi.fn();
+
+      // Create new document
+      await fileManager.new();
+
+      // Verify confirm was NOT called
+      expect(window.confirm).not.toHaveBeenCalled();
+
+      // Restore
+      window.confirm = originalConfirm;
+    });
+  });
+
   describe('Save As functionality', () => {
     it('should prompt for new filename with fallback', async () => {
       // Ensure File System Access API is not available

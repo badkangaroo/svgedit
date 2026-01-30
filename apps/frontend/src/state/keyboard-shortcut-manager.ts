@@ -24,6 +24,7 @@ export type ShortcutAction =
   | 'paste' 
   | 'save'
   | 'saveAs'
+  | 'new'
   | 'selectAll'
   | 'deselectAll';
 
@@ -167,6 +168,15 @@ export class KeyboardShortcutManager {
       [modifierKey]: true,
       action: 'paste',
       description: `${this.isMac ? 'Cmd' : 'Ctrl'}+V: Paste`,
+      preventDefault: true,
+    });
+
+    // New: Ctrl+N / Cmd+N
+    this.registerShortcut({
+      key: 'n',
+      [modifierKey]: true,
+      action: 'new',
+      description: `${this.isMac ? 'Cmd' : 'Ctrl'}+N: New Document`,
       preventDefault: true,
     });
 
@@ -384,6 +394,9 @@ export class KeyboardShortcutManager {
         case 'paste':
           this.handlePaste();
           break;
+        case 'new':
+          this.handleNew();
+          break;
         case 'save':
           this.handleSave();
           break;
@@ -506,6 +519,20 @@ export class KeyboardShortcutManager {
   }
 
   /**
+   * Handle new document action
+   * 
+   * Note: This dispatches a custom event that the file manager can listen for.
+   */
+  private handleNew(): void {
+    // Dispatch a custom event that the file manager can listen for
+    const event = new CustomEvent('editor:new', {
+      bubbles: true,
+      composed: true,
+    });
+    document.dispatchEvent(event);
+  }
+
+  /**
    * Handle save action
    * 
    * Note: This is a placeholder that dispatches a custom event.
@@ -579,7 +606,7 @@ export class KeyboardShortcutManager {
         ['selectAll', 'deselectAll', 'delete'].includes(s.action)
       ),
       'File': this.shortcuts.filter(s => 
-        ['save', 'saveAs'].includes(s.action)
+        ['new', 'save', 'saveAs'].includes(s.action)
       ),
     };
   }

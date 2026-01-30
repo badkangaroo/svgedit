@@ -163,6 +163,18 @@ The Frontend SVG Editor is a web-based visual editing application that enables u
 4. THE Editor SHALL generate valid, well-formed SVG markup when saving
 5. THE Editor SHALL support keyboard shortcuts for save (Ctrl+S / Cmd+S)
 
+### Requirement 12A: File Operations - New Document
+
+**User Story:** As a user, I want to create a new blank document, so that I can start a fresh SVG project without opening an existing file.
+
+#### Acceptance Criteria
+
+1. THE Editor SHALL provide a "New" option accessible from the file menu
+2. WHEN a user selects "New", THE Editor SHALL create a blank SVG document with default dimensions
+3. WHEN a user has unsaved changes, THE Editor SHALL prompt for confirmation before creating a new document
+4. WHEN a new document is created, THE Editor SHALL clear the undo/redo history
+5. THE Editor SHALL support keyboard shortcuts for new document (Ctrl+N / Cmd+N)
+
 ### Requirement 13: Performance - Large Document Handling
 
 **User Story:** As a user, I want the editor to remain responsive with large SVG documents, so that I can work with complex graphics without lag.

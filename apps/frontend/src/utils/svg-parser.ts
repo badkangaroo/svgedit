@@ -257,6 +257,14 @@ export class SVGParser {
       return this.parse(svgText);
     }
     
+    // Show progress indicator
+    const loadingHandle = loadingIndicator.show({
+      message: 'Parsing large SVG document...',
+      type: 'progress',
+      delay: 0,
+      progress: 0,
+    });
+    
     return new Promise((resolve, reject) => {
       try {
         // Create worker
@@ -276,12 +284,18 @@ export class SVGParser {
           }
           
           if (message.type === 'progress') {
+            // Update progress indicator
+            loadingHandle.updateProgress(message.percent);
+            loadingHandle.updateMessage(message.message);
+            
+            // Call optional callback
             if (onProgress) {
               onProgress(message.percent, message.message);
             }
           } else if (message.type === 'result') {
             // Clean up worker
             worker.terminate();
+            loadingHandle.hide();
             
             // If we have serialized SVG, re-parse it on main thread to get actual DOM elements
             if (message.result.success && message.result.serializedSVG) {
@@ -293,6 +307,7 @@ export class SVGParser {
           } else if (message.type === 'error') {
             // Clean up worker
             worker.terminate();
+            loadingHandle.hide();
             
             reject(new Error(message.error));
           }
@@ -301,6 +316,7 @@ export class SVGParser {
         // Set up error handler
         worker.onerror = (error) => {
           worker.terminate();
+          loadingHandle.hide();
           reject(error);
         };
         
@@ -312,6 +328,7 @@ export class SVGParser {
         });
         
       } catch (error) {
+        loadingHandle.hide();
         // Fall back to regular parse if worker creation fails
         console.warn('Failed to create worker, falling back to main thread parsing:', error);
         resolve(this.parse(svgText));

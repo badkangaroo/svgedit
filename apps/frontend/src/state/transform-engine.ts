@@ -3,12 +3,33 @@
  * 
  * Handles element manipulation operations including move, resize, rotate, and delete.
  * Integrates with the history manager to support undo/redo.
+ * Uses Web Workers for large documents (> 5000 nodes) to maintain UI responsiveness.
  * 
- * Requirements: 7.1, 7.4, 8.1, 8.2, 8.4, 8.5
+ * Requirements: 7.1, 7.4, 8.1, 8.2, 8.4, 8.5, 14.2
  */
 
 import { Operation } from '../types';
 import { documentState } from './document-state';
+import { loadingIndicator } from '../utils/loading-indicator';
+
+/**
+ * Count total nodes in document tree
+ */
+function countNodes(tree: any[]): number {
+  let count = 0;
+  
+  function traverse(nodes: any[]): void {
+    for (const node of nodes) {
+      count++;
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    }
+  }
+  
+  traverse(tree);
+  return count;
+}
 
 /**
  * TransformEngine class handles element manipulation operations
@@ -20,10 +41,14 @@ import { documentState } from './document-state';
  * - Rotating elements
  * - Applying arbitrary transformations
  * 
+ * For large documents (> 5000 nodes), operations are offloaded to a Web Worker
+ * to maintain UI responsiveness.
+ * 
  * Each operation returns an Operation object that can be pushed to the history manager
  * for undo/redo support.
  */
 export class TransformEngine {
+  private workerThreshold = 5000; // Use worker for documents with > 5000 nodes
   /**
    * Move elements by a delta amount
    * 
@@ -33,6 +58,8 @@ export class TransformEngine {
    * - cx/cy attributes (for circle and ellipse)
    * - transform attribute (for elements that don't have position attributes or already have transforms)
    * 
+   * For large documents (> 5000 nodes), the operation is performed in a Web Worker.
+   * 
    * @param elementIds Array of element IDs to move
    * @param deltaX Horizontal movement delta
    * @param deltaY Vertical movement delta
@@ -40,6 +67,7 @@ export class TransformEngine {
    */
   move(elementIds: string[], deltaX: number, deltaY: number): Operation {
     const doc = documentState.svgDocument.get();
+    const tree = documentState.documentTree.get();
     
     if (!doc) {
       throw new Error('No document loaded');
@@ -47,6 +75,28 @@ export class TransformEngine {
     
     if (elementIds.length === 0) {
       throw new Error('No elements specified for move operation');
+    }
+    
+    // Check if we should use worker
+    const nodeCount = countNodes(tree);
+    const shouldUseWorker = nodeCount > this.workerThreshold;
+    
+    if (shouldUseWorker) {
+      return this.moveInWorker(elementIds, deltaX, deltaY);
+    }
+    
+    // Use main thread for smaller documents
+    return this.moveInMainThread(elementIds, deltaX, deltaY);
+  }
+  
+  /**
+   * Move elements in main thread (for smaller documents)
+   */
+  private moveInMainThread(elementIds: string[], deltaX: number, deltaY: number): Operation {
+    const doc = documentState.svgDocument.get();
+    
+    if (!doc) {
+      throw new Error('No document loaded');
     }
     
     // Store original states for undo
@@ -137,6 +187,163 @@ export class TransformEngine {
       redo,
       description,
     };
+  }
+  
+  /**
+   * Move elements using Web Worker (for large documents > 5000 nodes)
+   */
+  private moveInWorker(elementIds: string[], deltaX: number, deltaY: number): Operation {
+    const doc = documentState.svgDocument.get();
+    
+    if (!doc) {
+      throw new Error('No document loaded');
+    }
+    
+    // Store original SVG for undo
+    const serializer = new XMLSerializer();
+    const originalSVG = serializer.serializeToString(doc);
+    
+    // Create a synchronous operation that will be executed asynchronously
+    // The actual transformation happens in the background
+    let transformedSVG: string | null = null;
+    let isComplete = false;
+    
+    // Start the worker transformation
+    this.executeWorkerTransform('move', elementIds, { deltaX, deltaY })
+      .then((result) => {
+        transformedSVG = result;
+        isComplete = true;
+        
+        // Re-parse and update the document
+        const parser = new DOMParser();
+        const newDoc = parser.parseFromString(result, 'image/svg+xml');
+        const newSvgElement = newDoc.documentElement as unknown as SVGElement;
+        
+        // Update document state
+        documentState.svgDocument.set(newSvgElement);
+        documentState.rawSVG.set(result);
+      })
+      .catch((error) => {
+        console.error('Worker transformation failed:', error);
+        isComplete = true;
+      });
+    
+    // Return operation immediately (transformation happens asynchronously)
+    const description = elementIds.length === 1
+      ? `Move element ${elementIds[0]}`
+      : `Move ${elementIds.length} elements`;
+    
+    return {
+      type: 'move',
+      timestamp: Date.now(),
+      undo: () => {
+        // Restore original SVG
+        const parser = new DOMParser();
+        const restoredDoc = parser.parseFromString(originalSVG, 'image/svg+xml');
+        const restoredSvgElement = restoredDoc.documentElement as unknown as SVGElement;
+        
+        documentState.svgDocument.set(restoredSvgElement);
+        documentState.rawSVG.set(originalSVG);
+      },
+      redo: () => {
+        // Reapply transformed SVG if available
+        if (transformedSVG) {
+          const parser = new DOMParser();
+          const redoDoc = parser.parseFromString(transformedSVG, 'image/svg+xml');
+          const redoSvgElement = redoDoc.documentElement as unknown as SVGElement;
+          
+          documentState.svgDocument.set(redoSvgElement);
+          documentState.rawSVG.set(transformedSVG);
+        }
+      },
+      description,
+    };
+  }
+  
+  /**
+   * Execute transformation in Web Worker
+   */
+  private async executeWorkerTransform(
+    type: 'move' | 'delete',
+    elementIds: string[],
+    params: any
+  ): Promise<string> {
+    // Check if Worker is available
+    if (typeof Worker === 'undefined') {
+      throw new Error('Web Workers not supported');
+    }
+    
+    const doc = documentState.svgDocument.get();
+    if (!doc) {
+      throw new Error('No document loaded');
+    }
+    
+    // Serialize current document
+    const serializer = new XMLSerializer();
+    const serializedSVG = serializer.serializeToString(doc);
+    
+    // Show progress indicator
+    const loadingHandle = loadingIndicator.show({
+      message: `Processing ${type} operation...`,
+      type: 'progress',
+      delay: 0,
+      progress: 0,
+    });
+    
+    return new Promise((resolve, reject) => {
+      try {
+        // Create worker
+        const worker = new Worker(
+          new URL('../workers/transform.worker.ts', import.meta.url),
+          { type: 'module' }
+        );
+        
+        const requestId = `transform-${Date.now()}-${Math.random()}`;
+        
+        // Set up message handler
+        worker.onmessage = (event: MessageEvent) => {
+          const message = event.data;
+          
+          if (message.requestId !== requestId) {
+            return;
+          }
+          
+          if (message.type === 'progress') {
+            // Update progress indicator with percentage and message
+            loadingHandle.updateProgress(message.percent);
+            loadingHandle.updateMessage(message.message);
+          } else if (message.type === 'result') {
+            worker.terminate();
+            loadingHandle.hide();
+            resolve(message.serializedSVG);
+          } else if (message.type === 'error') {
+            worker.terminate();
+            loadingHandle.hide();
+            reject(new Error(message.error));
+          }
+        };
+        
+        // Set up error handler
+        worker.onerror = (error) => {
+          worker.terminate();
+          loadingHandle.hide();
+          reject(error);
+        };
+        
+        // Send transform request to worker
+        worker.postMessage({
+          type,
+          requestId,
+          elementIds,
+          params,
+          serializedSVG,
+        });
+        
+      } catch (error) {
+        loadingHandle.hide();
+        reject(error);
+      }
+    });
   }
   
   /**
@@ -263,11 +470,14 @@ export class TransformEngine {
    * It removes elements from the DOM and clears the selection.
    * The operation can be undone to restore the deleted elements.
    * 
+   * For large documents (> 5000 nodes), the operation is performed in a Web Worker.
+   * 
    * @param elementIds Array of element IDs to delete
    * @returns Operation object for undo/redo
    */
   delete(elementIds: string[]): Operation {
     const doc = documentState.svgDocument.get();
+    const tree = documentState.documentTree.get();
     
     if (!doc) {
       throw new Error('No document loaded');
@@ -275,6 +485,28 @@ export class TransformEngine {
     
     if (elementIds.length === 0) {
       throw new Error('No elements specified for delete operation');
+    }
+    
+    // Check if we should use worker
+    const nodeCount = countNodes(tree);
+    const shouldUseWorker = nodeCount > this.workerThreshold;
+    
+    if (shouldUseWorker) {
+      return this.deleteInWorker(elementIds);
+    }
+    
+    // Use main thread for smaller documents
+    return this.deleteInMainThread(elementIds);
+  }
+  
+  /**
+   * Delete elements in main thread (for smaller documents)
+   */
+  private deleteInMainThread(elementIds: string[]): Operation {
+    const doc = documentState.svgDocument.get();
+    
+    if (!doc) {
+      throw new Error('No document loaded');
     }
     
     // Store information needed to restore deleted elements
@@ -349,6 +581,76 @@ export class TransformEngine {
       timestamp: Date.now(),
       undo,
       redo,
+      description,
+    };
+  }
+  
+  /**
+   * Delete elements using Web Worker (for large documents > 5000 nodes)
+   */
+  private deleteInWorker(elementIds: string[]): Operation {
+    const doc = documentState.svgDocument.get();
+    
+    if (!doc) {
+      throw new Error('No document loaded');
+    }
+    
+    // Store original SVG for undo
+    const serializer = new XMLSerializer();
+    const originalSVG = serializer.serializeToString(doc);
+    
+    // Create a synchronous operation that will be executed asynchronously
+    let transformedSVG: string | null = null;
+    let isComplete = false;
+    
+    // Start the worker transformation
+    this.executeWorkerTransform('delete', elementIds, {})
+      .then((result) => {
+        transformedSVG = result;
+        isComplete = true;
+        
+        // Re-parse and update the document
+        const parser = new DOMParser();
+        const newDoc = parser.parseFromString(result, 'image/svg+xml');
+        const newSvgElement = newDoc.documentElement as unknown as SVGElement;
+        
+        // Update document state
+        documentState.svgDocument.set(newSvgElement);
+        documentState.rawSVG.set(result);
+      })
+      .catch((error) => {
+        console.error('Worker transformation failed:', error);
+        isComplete = true;
+      });
+    
+    // Return operation immediately (transformation happens asynchronously)
+    const description = elementIds.length === 1
+      ? `Delete element ${elementIds[0]}`
+      : `Delete ${elementIds.length} elements`;
+    
+    return {
+      type: 'delete',
+      timestamp: Date.now(),
+      undo: () => {
+        // Restore original SVG
+        const parser = new DOMParser();
+        const restoredDoc = parser.parseFromString(originalSVG, 'image/svg+xml');
+        const restoredSvgElement = restoredDoc.documentElement as unknown as SVGElement;
+        
+        documentState.svgDocument.set(restoredSvgElement);
+        documentState.rawSVG.set(originalSVG);
+      },
+      redo: () => {
+        // Reapply transformed SVG if available
+        if (transformedSVG) {
+          const parser = new DOMParser();
+          const redoDoc = parser.parseFromString(transformedSVG, 'image/svg+xml');
+          const redoSvgElement = redoDoc.documentElement as unknown as SVGElement;
+          
+          documentState.svgDocument.set(redoSvgElement);
+          documentState.rawSVG.set(transformedSVG);
+        }
+      },
       description,
     };
   }

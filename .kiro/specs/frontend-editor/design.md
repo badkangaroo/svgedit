@@ -437,6 +437,13 @@ interface FileState {
 }
 
 class FileManager {
+  async new(): Promise<FileState> {
+    // Check for unsaved changes and prompt if needed
+    // Create blank SVG document with default dimensions
+    // Clear undo/redo history
+    // Reset file state
+  }
+  
   async open(): Promise<FileState> {
     // Use File System Access API if available
     // Fall back to file input otherwise
@@ -605,6 +612,18 @@ interface PerformanceConfig {
 *For any* valid SVG file, opening the file should parse its content and display it in all synchronized views.
 
 **Validates: Requirements 11.2, 11.5**
+
+### Property 21A: New Document Creates Blank State
+
+*For any* new document creation, the editor should create a valid blank SVG document with default dimensions, clear the undo/redo history, and reset the file state.
+
+**Validates: Requirements 12A.2, 12A.4**
+
+### Property 21B: New Document Unsaved Changes Warning
+
+*For any* document with unsaved changes (isDirty = true), creating a new document should prompt the user for confirmation before proceeding.
+
+**Validates: Requirements 12A.3**
 
 ### Property 22: SVG Serialization Round-Trip
 

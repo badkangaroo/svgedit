@@ -360,6 +360,23 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Test save fallback with download
     - Test save keyboard shortcut
     - _Requirements: 11.3, 11.4, 12.2, 12.3, 12.5_
+  
+  - [x] 18.5 Implement new document functionality
+    - Add "New" option to file menu
+    - Create method to generate blank SVG document with default dimensions (800x600)
+    - Check for unsaved changes (isDirty flag) and prompt user for confirmation
+    - Clear undo/redo history when creating new document
+    - Reset file state (no handle, no name, not dirty)
+    - Add keyboard shortcut (Ctrl+N / Cmd+N)
+    - _Requirements: 12A.1, 12A.2, 12A.3, 12A.4, 12A.5_
+  
+  - [ ]* 18.6 Write property test for new document creation
+    - **Property 21A: New document creates blank state**
+    - **Validates: Requirements 12A.2, 12A.4**
+  
+  - [ ]* 18.7 Write property test for unsaved changes warning
+    - **Property 21B: New document unsaved changes warning**
+    - **Validates: Requirements 12A.3**
 
 - [x] 19. Sprint 3 Checkpoint
   - Verify create/move/delete primitives work with undo/redo
@@ -377,13 +394,13 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Use worker for documents > 1MB
     - _Requirements: 14.1_
   
-  - [ ] 20.2 Create Web Worker for transformations
+  - [x] 20.2 Create Web Worker for transformations
     - Set up worker file for complex transformations
     - Implement transform operations in worker
     - Use worker for documents > 5000 nodes
     - _Requirements: 14.2_
   
-  - [ ] 20.3 Implement progress indicators for workers
+  - [-] 20.3 Implement progress indicators for workers
     - Display progress UI when workers are processing
     - Update progress percentage during worker operations
     - _Requirements: 14.3_

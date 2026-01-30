@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-sun" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffde59"/>
+      <stop offset="100%" stop-color="#ff914d"/>
+    </linearGradient>
+    <radialGradient id="grad-bubble" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#63b3ff" stop-opacity="0.9"/>
+    </radialGradient>
+    <pattern id="pattern-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="40" height="40" fill="#f7fafc"/>
+      <path d="M40 0 H0 V40" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+    </pattern>
+    <clipPath id="clip-window">
+      <rect x="80" y="80" width="360" height="220" rx="16" ry="16"/>
+    </clipPath>
+    <mask id="mask-hole">
+      <rect x="0" y="0" width="1200" height="800" fill="white"/>
+      <circle cx="980" cy="580" r="70" fill="black"/>
+    </mask>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="800" fill="url(#pattern-grid)"/>
+
+  <g id="header" transform="translate(40, 40)">
+    <rect x="0" y="0" width="1120" height="70" rx="18" ry="18" fill="#111827" opacity="0.92"/>
+    <text x="30" y="44" font-family="Arial, Helvetica, sans-serif" font-size="26" fill="#f9fafb">
+      SVG Edit Playground
+    </text>
+    <circle cx="1040" cy="35" r="18" fill="#34d399"/>
+    <circle cx="1090" cy="35" r="18" fill="#f87171"/>
+  </g>
+
+  <g id="scene" transform="translate(40, 140)">
+    <rect x="0" y="0" width="500" height="300" rx="24" ry="24" fill="#ffffff" stroke="#d1d5db" stroke-width="3"/>
+    <rect x="40" y="40" width="420" height="220" rx="14" ry="14" fill="#111827" clip-path="url(#clip-window)"/>
+
+    <g clip-path="url(#clip-window)">
+      <rect x="40" y="40" width="420" height="220" fill="#0f172a"/>
+      <circle cx="125" cy="95" r="44" fill="url(#grad-sun)"/>
+      <ellipse cx="280" cy="95" rx="70" ry="34" fill="#e2e8f0" opacity="0.9"/>
+      <ellipse cx="360" cy="90" rx="52" ry="26" fill="#cbd5f5" opacity="0.9"/>
+      <rect x="60" y="160" width="80" height="70" fill="#22c55e"/>
+      <rect x="170" y="140" width="70" height="90" fill="#16a34a"/>
+      <polygon points="240,230 280,170 320,230" fill="#15803d"/>
+      <path d="M70 220 C95 180, 130 180, 160 220" stroke="#fde68a" stroke-width="6" fill="none"/>
+      <path d="M180 210 C210 170, 260 170, 300 210" stroke="#fde68a" stroke-width="6" fill="none"/>
+      <line x1="360" y1="180" x2="430" y2="210" stroke="#93c5fd" stroke-width="4"/>
+      <polyline points="360,200 380,160 400,190 420,150 440,190" fill="none" stroke="#a5b4fc" stroke-width="3"/>
+      <text x="70" y="120" font-family="Verdana, Arial, sans-serif" font-size="22" fill="#f8fafc">
+        Hello SVG
+      </text>
+    </g>
+  </g>
+
+  <g id="shapes" transform="translate(620, 160)">
+    <rect x="0" y="0" width="520" height="300" rx="20" ry="20" fill="#ffffff" stroke="#d1d5db" stroke-width="3"/>
+    <g transform="translate(40, 40)">
+      <rect x="0" y="0" width="120" height="120" fill="#f97316"/>
+      <rect x="20" y="20" width="120" height="120" fill="#fb7185" opacity="0.8"/>
+      <circle cx="220" cy="60" r="50" fill="url(#grad-bubble)"/>
+      <ellipse cx="340" cy="60" rx="70" ry="45" fill="#a855f7" opacity="0.7"/>
+      <polygon points="420,110 460,10 500,110" fill="#38bdf8"/>
+      <polyline points="0,190 60,230 120,200 180,240" fill="none" stroke="#0ea5e9" stroke-width="6"/>
+      <line x1="220" y1="160" x2="360" y2="210" stroke="#f43f5e" stroke-width="5"/>
+      <path d="M400 160 C430 130, 470 130, 500 160" stroke="#22c55e" stroke-width="5" fill="none"/>
+      <path d="M410 210 L450 250 L490 210 Z" fill="#facc15"/>
+    </g>
+  </g>
+
+  <g id="icons" transform="translate(60, 500)">
+    <rect x="0" y="0" width="1080" height="250" rx="22" ry="22" fill="#ffffff" stroke="#d1d5db" stroke-width="3" mask="url(#mask-hole)"/>
+    <g transform="translate(40, 40)">
+      <circle cx="70" cy="70" r="50" fill="#4ade80"/>
+      <path d="M70 35 L86 68 L120 70 L92 90 L104 124 L70 104 L36 124 L48 90 L20 70 L54 68 Z" fill="#166534"/>
+      <rect x="150" y="20" width="140" height="100" rx="20" ry="20" fill="#38bdf8"/>
+      <text x="170" y="78" font-family="Courier New, monospace" font-size="20" fill="#0f172a">
+        CODE
+      </text>
+      <g transform="translate(330, 10)">
+        <rect x="0" y="0" width="140" height="120" rx="16" ry="16" fill="#a78bfa"/>
+        <circle cx="40" cy="45" r="18" fill="#1e1b4b"/>
+        <circle cx="100" cy="45" r="18" fill="#1e1b4b"/>
+        <rect x="30" y="70" width="80" height="20" rx="10" ry="10" fill="#1e1b4b"/>
+      </g>
+      <g transform="translate(520, 0)">
+        <rect x="0" y="20" width="140" height="90" fill="#fca5a5"/>
+        <polygon points="0,20 70,0 140,20" fill="#ef4444"/>
+        <rect x="18" y="50" width="40" height="40" fill="#fecaca"/>
+        <rect x="82" y="50" width="40" height="40" fill="#fecaca"/>
+      </g>
+      <g transform="translate(720, 10)">
+        <circle cx="60" cy="60" r="50" fill="#fde68a"/>
+        <path d="M40 70 Q60 90 80 70" stroke="#b45309" stroke-width="4" fill="none"/>
+        <circle cx="40" cy="50" r="6" fill="#b45309"/>
+        <circle cx="80" cy="50" r="6" fill="#b45309"/>
+      </g>
+      <g transform="translate(900, 10)">
+        <rect x="0" y="0" width="140" height="120" rx="18" ry="18" fill="#34d399"/>
+        <path d="M20 90 L120 30" stroke="#064e3b" stroke-width="8"/>
+        <path d="M20 30 L120 90" stroke="#064e3b" stroke-width="8"/>
+      </g>
+      <g id="embedded-image" transform="translate(760, 140)">
+        <rect x="0" y="0" width="240" height="90" rx="12" ry="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+        <image href="embedded_image.webp" x="10" y="8" width="220" height="74" preserveAspectRatio="xMidYMid slice"/>
+      </g>
+    </g>
+  </g>
+
+  <g id="labels" transform="translate(60, 470)">
+    <text x="0" y="0" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#111827">
+      Assorted elements: rect, circle, ellipse, line, polyline, polygon, path, text, image, defs, clip, mask.
+    </text>
+  </g>
+</svg>

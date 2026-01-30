@@ -42,6 +42,7 @@ export class SVGEditorApp extends HTMLElement {
     keyboardShortcutManager.attach();
 
     // Listen for save events from keyboard shortcuts
+    document.addEventListener('editor:new', this.handleNewEvent);
     document.addEventListener('editor:save', this.handleSaveEvent);
     document.addEventListener('editor:saveAs', this.handleSaveAsEvent);
   }
@@ -53,6 +54,7 @@ export class SVGEditorApp extends HTMLElement {
     keyboardShortcutManager.detach();
 
     // Remove save event listeners
+    document.removeEventListener('editor:new', this.handleNewEvent);
     document.removeEventListener('editor:save', this.handleSaveEvent);
     document.removeEventListener('editor:saveAs', this.handleSaveAsEvent);
   }
@@ -284,6 +286,10 @@ export class SVGEditorApp extends HTMLElement {
           <div class="menu-dropdown">
             <button class="menu-item" id="file-menu">File</button>
             <div class="menu-dropdown-content" id="file-menu-dropdown">
+              <button class="menu-dropdown-item" id="file-new">
+                <span>New</span>
+                <span class="menu-dropdown-item-shortcut">Ctrl+N</span>
+              </button>
               <button class="menu-dropdown-item" id="file-open">
                 <span>Open...</span>
                 <span class="menu-dropdown-item-shortcut">Ctrl+O</span>
@@ -363,6 +369,11 @@ export class SVGEditorApp extends HTMLElement {
     }
 
     // File menu items
+    const fileNew = this.shadowRoot.querySelector('#file-new');
+    if (fileNew) {
+      fileNew.addEventListener('click', this.handleFileNew);
+    }
+
     const fileOpen = this.shadowRoot.querySelector('#file-open');
     if (fileOpen) {
       fileOpen.addEventListener('click', this.handleFileOpen);
@@ -494,6 +505,12 @@ export class SVGEditorApp extends HTMLElement {
     }
   };
 
+  private handleFileNew = async (event: Event) => {
+    event.stopPropagation();
+    this.closeAllDropdowns();
+    await this.performNew();
+  };
+
   private handleFileOpen = async (event: Event) => {
     event.stopPropagation();
     this.closeAllDropdowns();
@@ -533,6 +550,11 @@ export class SVGEditorApp extends HTMLElement {
     dropdowns.forEach(dropdown => dropdown.classList.remove('show'));
   }
 
+  private handleNewEvent = async () => {
+    // Handle new document event from keyboard shortcut
+    await this.performNew();
+  };
+
   private handleSaveEvent = async () => {
     // Handle save event from keyboard shortcut
     await this.performSave();
@@ -542,6 +564,23 @@ export class SVGEditorApp extends HTMLElement {
     // Handle save as event from keyboard shortcut
     await this.performSaveAs();
   };
+
+  private async performNew(): Promise<void> {
+    try {
+      await fileManager.new();
+      console.log('New document created successfully');
+      this.showNotification('New document created', 'success');
+    } catch (error) {
+      if (error instanceof Error) {
+        // Don't show error for user cancellation
+        if (error.message.includes('cancelled')) {
+          return;
+        }
+        console.error('Failed to create new document:', error);
+        this.showNotification(`Error: ${error.message}`, 'error');
+      }
+    }
+  }
 
   private async performSave(): Promise<void> {
     try {

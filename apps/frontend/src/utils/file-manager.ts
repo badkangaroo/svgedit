@@ -32,6 +32,66 @@ export class FileManager {
   };
 
   /**
+   * Create a new blank SVG document
+   * Prompts for confirmation if there are unsaved changes
+   * 
+   * @returns Promise resolving to FileState
+   * @throws Error if user cancels or operation fails
+   */
+  async new(): Promise<FileState> {
+    // Check for unsaved changes and prompt user
+    if (this.currentFileState.isDirty) {
+      const confirmed = confirm(
+        'You have unsaved changes. Creating a new document will discard them. Continue?'
+      );
+      if (!confirmed) {
+        throw new Error('New document cancelled by user');
+      }
+    }
+
+    const loadingHandle = loadingIndicator.show({
+      message: 'Creating new document...',
+      type: 'spinner',
+    });
+
+    try {
+      // Create a blank SVG document with default dimensions (800x600)
+      const blankSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- New SVG Document -->
+</svg>`;
+
+      // Parse the blank SVG
+      const parseResult = svgParser.parse(blankSVG);
+
+      if (!parseResult.success) {
+        throw new Error('Failed to create blank SVG document');
+      }
+
+      // Update document state with blank document
+      documentStateUpdater.setDocument(
+        parseResult.document,
+        parseResult.tree,
+        blankSVG
+      );
+
+      // Clear undo/redo history
+      editorController.clearHistory();
+
+      // Reset file state
+      this.currentFileState = {
+        handle: null,
+        name: '',
+        isDirty: false,
+        lastSaved: null,
+      };
+
+      return { ...this.currentFileState };
+    } finally {
+      loadingHandle.hide();
+    }
+  }
+
+  /**
    * Open an SVG file from the user's file system
    * Uses File System Access API where supported, falls back to file input
    * 
