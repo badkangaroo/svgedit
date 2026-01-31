@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+  <title>Test SVG</title>
+  <desc>A simple test SVG for the editor</desc>
+  
+  <!-- Background -->
+  <rect id="background" x="0" y="0" width="400" height="300" fill="#f0f0f0"/>
+  
+  <!-- Shapes Group -->
+  <g id="shapes" transform="translate(50, 50)">
+    <circle id="circle1" cx="50" cy="50" r="40" fill="#ff6b6b" stroke="#c92a2a" stroke-width="2"/>
+    <rect id="rect1" x="120" y="10" width="80" height="80" fill="#4dabf7" stroke="#1971c2" stroke-width="2" rx="5"/>
+    <ellipse id="ellipse1" cx="280" cy="50" rx="50" ry="30" fill="#51cf66" stroke="#2f9e44" stroke-width="2"/>
+  </g>
+  
+  <!-- Path Group -->
+  <g id="paths" transform="translate(50, 150)">
+    <path id="path1" d="M 0 50 Q 50 0 100 50 T 200 50" fill="none" stroke="#845ef7" stroke-width="3"/>
+    <polygon id="polygon1" points="220,20 250,70 190,70" fill="#ffd43b" stroke="#f59f00" stroke-width="2"/>
+  </g>
+  
+  <!-- Text -->
+  <text id="text1" x="200" y="280" font-family="Arial, sans-serif" font-size="20" fill="#495057" text-anchor="middle">
+    Test SVG Document
+  </text>
+</svg>

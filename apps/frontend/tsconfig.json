@@ -23,7 +23,7 @@
     "useDefineForClassFields": false,
 
     /* Testing */
-    "types": ["vitest/globals"]
+    "types": ["vitest/globals", "@playwright/test", "node"]
   },
   "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "dist"]

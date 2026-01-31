@@ -4,13 +4,17 @@
 
 import type { Page } from '@playwright/test';
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
- * Load the test.svg file from the repository root
+ * Load the test.svg file from the apps/frontend directory
  */
 export async function loadTestSVG(page: Page): Promise<void> {
-  const svgPath = resolve(__dirname, '../../../../test.svg');
+  const svgPath = resolve(__dirname, '../../test.svg');
   const svgContent = readFileSync(svgPath, 'utf-8');
   await loadSVGContent(page, svgContent);
 }
@@ -24,6 +28,9 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
     // Access the file manager and load the content
     const { documentStateUpdater } = (window as any);
     const { SVGParser } = (window as any);
+    
+    console.log('loadSVGContent: documentStateUpdater available?', !!documentStateUpdater);
+    console.log('loadSVGContent: SVGParser available?', !!SVGParser);
     
     if (documentStateUpdater && SVGParser) {
       const parser = new SVGParser();

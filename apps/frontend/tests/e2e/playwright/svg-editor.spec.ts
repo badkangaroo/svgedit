@@ -6,13 +6,17 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Helper to load test.svg content
 function loadTestSVG(): string {
-  const testSvgPath = resolve(__dirname, '../../../../../test.svg');
-  return readFileSync(testSvgPath, 'utf-8');
+  const testSvgPath = path.resolve(__dirname, '../../../test.svg');
+  return fs.readFileSync(testSvgPath, 'utf-8');
 }
 
 // Helper to programmatically load SVG into the editor
