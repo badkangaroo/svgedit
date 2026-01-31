@@ -16,30 +16,30 @@
   - [x] 1.2.3 Implement `expectValidationError(page, attributeName, errorMessage)` function
   - [x] 1.2.4 Add unit tests for helper functions
 
-- [ ] 1.3 Create `tests/helpers/tool-helpers.ts`
-  - [ ] 1.3.1 Implement `selectTool(page, toolName)` function
-  - [ ] 1.3.2 Implement `drawPrimitive(page, toolName, startX, startY, endX, endY)` function
-  - [ ] 1.3.3 Implement `verifyPrimitiveCreated(page, elementType)` function
-  - [ ] 1.3.4 Add unit tests for helper functions
+- [x] 1.3 Create `tests/helpers/tool-helpers.ts`
+  - [x] 1.3.1 Implement `selectTool(page, toolName)` function
+  - [x] 1.3.2 Implement `drawPrimitive(page, toolName, startX, startY, endX, endY)` function
+  - [x] 1.3.3 Implement `verifyPrimitiveCreated(page, elementType)` function
+  - [x] 1.3.4 Add unit tests for helper functions
 
-- [ ] 1.4 Create `tests/helpers/test-data-generators.ts`
-  - [ ] 1.4.1 Implement `generateLargeSVG(elementCount)` function
-  - [ ] 1.4.2 Implement `generateTestSVG()` function
-  - [ ] 1.4.3 Add validation tests for generated SVG
+- [x] 1.4 Create `tests/helpers/test-data-generators.ts`
+  - [x] 1.4.1 Implement `generateLargeSVG(elementCount)` function
+  - [x] 1.4.2 Implement `generateTestSVG()` function
+  - [x] 1.4.3 Add validation tests for generated SVG
 
-- [ ] 1.5 Update `tests/helpers/svg-helpers.ts`
-  - [ ] 1.5.1 Refactor existing `loadTestSVG()` to use programmatic loading
-  - [ ] 1.5.2 Add `loadSVGContent(page, content)` function
-  - [ ] 1.5.3 Ensure compatibility with new helper functions
+- [x] 1.5 Update `tests/helpers/svg-helpers.ts`
+  - [x] 1.5.1 Refactor existing `loadTestSVG()` to use programmatic loading
+  - [x] 1.5.2 Add `loadSVGContent(page, content)` function
+  - [x] 1.5.3 Ensure compatibility with new helper functions
 
 ### 2. Element Selection Tests
-- [ ] 2.1 Create `tests/e2e/playwright/element-selection.spec.ts`
-  - [ ] 2.1.1 Write test: "should select element on canvas click"
-  - [ ] 2.1.2 Write test: "should synchronize selection across all panels"
-  - [ ] 2.1.3 Write test: "should support multi-select with Ctrl key"
-  - [ ] 2.1.4 Write test: "should clear selection on empty canvas click"
-  - [ ] 2.1.5 Write test: "should show selection highlights correctly"
-  - [ ] 2.1.6 Run tests across all browsers (Chromium, Firefox, WebKit)
+- [x] 2.1 Create `tests/e2e/playwright/element-selection.spec.ts`
+  - [x] 2.1.1 Write test: "should select element on canvas click"
+  - [x] 2.1.2 Write test: "should synchronize selection across all panels"
+  - [x] 2.1.3 Write test: "should support multi-select with Ctrl key"
+  - [x] 2.1.4 Write test: "should clear selection on empty canvas click"
+  - [x] 2.1.5 Write test: "should show selection highlights correctly"
+  - [x] 2.1.6 Run tests across all browsers (Chromium, Firefox, WebKit)
 
 ### 3. Attribute Editing Tests
 - [ ] 3.1 Create `tests/e2e/playwright/attribute-editing.spec.ts`

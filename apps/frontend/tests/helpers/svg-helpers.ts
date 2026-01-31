@@ -3,19 +3,13 @@
  */
 
 import type { Page } from '@playwright/test';
-import { readFileSync } from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { generateTestSVG } from './test-data-generators';
 
 /**
  * Load the test.svg file from the apps/frontend directory
  */
 export async function loadTestSVG(page: Page): Promise<void> {
-  const svgPath = resolve(__dirname, '../../test.svg');
-  const svgContent = readFileSync(svgPath, 'utf-8');
+  const svgContent = generateTestSVG();
   await loadSVGContent(page, svgContent);
 }
 
@@ -49,21 +43,6 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
   });
 }
 
-/**
- * Generate a large SVG document for performance testing
- */
-export function generateLargeSVG(elementCount: number): string {
-  let svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10000" height="10000">\n';
-  
-  for (let i = 0; i < elementCount; i++) {
-    const x = (i % 100) * 100;
-    const y = Math.floor(i / 100) * 100;
-    svg += `  <rect id="rect${i}" x="${x}" y="${y}" width="50" height="50" fill="blue"/>\n`;
-  }
-  
-  svg += '</svg>';
-  return svg;
-}
 
 /**
  * Wait for the editor to be fully initialized
