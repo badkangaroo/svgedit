@@ -117,19 +117,26 @@ describe('Worker Progress Indicators', () => {
       const smallSVG = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect id="rect-1" x="0" y="0" width="50" height="50" fill="blue"/></svg>';
       
       const result = svgParser.parse(smallSVG);
+      expect(result.success).toBe(true);
+      
       if (result.success && result.document) {
         documentState.svgDocument.set(result.document);
         documentState.documentTree.set(result.tree);
         documentState.rawSVG.set(smallSVG);
+        
+        // Find the actual ID assigned by the parser
+        const rectElement = result.document.querySelector('rect');
+        expect(rectElement).toBeTruthy();
+        const actualId = rectElement?.getAttribute('id') || 'rect-1';
+        
+        // Move operation should use main thread (no worker)
+        const operation = transformEngine.move([actualId], 10, 20);
+        
+        expect(operation.type).toBe('move');
+        
+        // Should not show progress indicator for small documents
+        expect(loadingIndicator.getActiveCount()).toBe(0);
       }
-      
-      // Move operation should use main thread (no worker)
-      const operation = transformEngine.move(['rect-1'], 10, 20);
-      
-      expect(operation.type).toBe('move');
-      
-      // Should not show progress indicator for small documents
-      expect(loadingIndicator.getActiveCount()).toBe(0);
     });
   });
 

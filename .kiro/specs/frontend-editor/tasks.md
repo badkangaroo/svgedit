@@ -400,7 +400,7 @@ This implementation plan breaks down the Frontend SVG Editor into incremental, t
     - Use worker for documents > 5000 nodes
     - _Requirements: 14.2_
   
-  - [-] 20.3 Implement progress indicators for workers
+  - [x] 20.3 Implement progress indicators for workers
     - Display progress UI when workers are processing
     - Update progress percentage during worker operations
     - _Requirements: 14.3_
