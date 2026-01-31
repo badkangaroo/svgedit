@@ -85,6 +85,9 @@ export class SVGSerializer {
     // Remove data-original-id if it exists
     element.removeAttribute('data-original-id');
     
+    // Remove the internal data-uuid attribute
+    element.removeAttribute('data-uuid');
+    
     // Remove any other editor-specific attributes (e.g., selection markers)
     element.removeAttribute('data-selected');
     element.removeAttribute('data-hovered');

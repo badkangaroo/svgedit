@@ -9,7 +9,7 @@ import {
   waitForEditorReady,
   hierarchyHasElement,
   expandHierarchyNode 
-} from '../helpers/svg-helpers';
+} from '../../helpers/svg-helpers';
 
 test.describe('SVG Loading', () => {
   test.beforeEach(async ({ page }) => {

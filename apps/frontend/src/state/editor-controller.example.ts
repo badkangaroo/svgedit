@@ -6,8 +6,8 @@
  */
 
 import { editorController } from './editor-controller';
-import { documentStateUpdater } from './document-state';
-import type { Operation } from '../types';
+import { documentState, documentStateUpdater } from './document-state';
+import type { Operation, DocumentNode } from '../types';
 
 // Example 1: Simple attribute change with undo/redo
 function exampleAttributeChange() {
@@ -60,8 +60,8 @@ function exampleElementCreation() {
   console.log('\n=== Example 2: Element Creation with Document State ===');
   
   // Get initial state
-  const initialTree = [...documentStateUpdater];
-  const newElement = { id: 'circle-1', type: 'circle' };
+  const initialTree = [...documentState.documentTree.get()];
+  const newElement = { id: 'circle-1', type: 'circle' } as unknown as DocumentNode;
   
   const operation: Operation = {
     type: 'create',

@@ -349,7 +349,7 @@ export function withLoading(threshold: number = 200) {
       } finally {
         clearTimeout(timerId);
         if (handle) {
-          handle.hide();
+          (handle as LoadingIndicatorHandle).hide();
         }
       }
     };

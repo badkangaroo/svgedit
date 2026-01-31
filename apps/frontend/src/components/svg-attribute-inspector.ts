@@ -16,7 +16,7 @@ import type { DocumentNode } from '../types';
 /**
  * Attribute type classification for input control generation
  */
-type AttributeType = 'number' | 'color' | 'text' | 'select';
+type AttributeType = 'number' | 'color' | 'text' | 'select' | 'viewBox';
 
 /**
  * Attribute metadata for input control generation
@@ -88,7 +88,7 @@ export class SVGAttributeInspector extends HTMLElement {
     'transform': { type: 'text', label: 'Transform' },
     'd': { type: 'text', label: 'Path Data' },
     'points': { type: 'text', label: 'Points' },
-    'viewBox': { type: 'text', label: 'ViewBox' },
+    'viewBox': { type: 'viewBox', label: 'ViewBox' },
     'id': { type: 'text', label: 'ID' },
     'class': { type: 'text', label: 'Class' },
   };
@@ -568,9 +568,65 @@ export class SVGAttributeInspector extends HTMLElement {
         return this.createNumberInput(name, value, metadata);
       case 'select':
         return this.createSelectInput(name, value, metadata);
+      case 'viewBox':
+        return this.createViewBoxInput(name, value);
       default:
         return this.createTextInput(name, value);
     }
+  }
+
+  /**
+   * Create a viewBox input (4 number inputs)
+   */
+  private createViewBoxInput(name: string, value: string): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'grid';
+    wrapper.style.gridTemplateColumns = '1fr 1fr 1fr 1fr';
+    wrapper.style.gap = '4px';
+
+    // Parse viewBox values (min-x min-y width height)
+    // Default to "0 0 0 0" if invalid or empty
+    const parts = value.trim().split(/\s+/).map(Number);
+    const values = [
+      isNaN(parts[0]) ? 0 : parts[0],
+      isNaN(parts[1]) ? 0 : parts[1],
+      isNaN(parts[2]) ? 0 : parts[2],
+      isNaN(parts[3]) ? 0 : parts[3],
+    ];
+    
+    const labels = ['x', 'y', 'w', 'h'];
+    const inputs: HTMLInputElement[] = [];
+
+    values.forEach((val, index) => {
+      const container = document.createElement('div');
+      
+      const label = document.createElement('div');
+      label.textContent = labels[index];
+      label.style.fontSize = '10px';
+      label.style.color = 'var(--color-on-surface-variant)';
+      label.style.marginBottom = '2px';
+      
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.classList.add('attribute-input');
+      input.value = val.toString();
+      input.style.padding = '4px';
+      
+      input.addEventListener('change', () => {
+        // Update specific value in the array
+        values[index] = parseFloat(input.value) || 0;
+        // Construct new viewBox string
+        const newValue = values.join(' ');
+        this.handleAttributeChange(name, newValue);
+      });
+      
+      inputs.push(input);
+      container.appendChild(label);
+      container.appendChild(input);
+      wrapper.appendChild(container);
+    });
+
+    return wrapper;
   }
 
   /**
@@ -813,6 +869,16 @@ export class SVGAttributeInspector extends HTMLElement {
 
     if (metadata?.type === 'select') {
       return this.validateSelectAttribute(value, metadata, fieldDiv, errorDiv);
+    }
+
+    if (metadata?.type === 'viewBox') {
+      // Basic validation: must be 4 numbers
+      const parts = value.trim().split(/\s+/);
+      if (parts.length !== 4 || parts.some(p => isNaN(parseFloat(p)))) {
+        this.showValidationError(fieldDiv, errorDiv, 'Must be 4 numbers (x y w h)');
+        return false;
+      }
+      return true;
     }
 
     return true;

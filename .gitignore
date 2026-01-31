@@ -25,3 +25,5 @@ coverage/
 # Temp files
 tmp/
 temp/
+apps/frontend/playwright-report/
+apps/frontend/test-results/

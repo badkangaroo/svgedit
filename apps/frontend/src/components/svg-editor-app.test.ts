@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import './svg-editor-app';
+import { SVGEditorApp } from './svg-editor-app';
 import type { PanelLayout } from '../types';
 
 describe('SVGEditorApp', () => {

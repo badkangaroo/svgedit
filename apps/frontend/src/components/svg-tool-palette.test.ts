@@ -5,7 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { SVGToolPalette, toolPaletteState, type ToolType } from './svg-tool-palette';
+import { SVGToolPalette, toolPaletteState } from './svg-tool-palette';
+import type { ToolType } from '../types';
 
 describe('SVGToolPalette', () => {
   let palette: SVGToolPalette;

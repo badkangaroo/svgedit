@@ -34,10 +34,8 @@ test.describe('Selection Helpers', () => {
     // Select an element
     await selectElement(page, 'test-rect');
     
-    // Verify selection in hierarchy panel
-    const hierarchy = page.locator('svg-hierarchy-panel');
-    const selectedNode = hierarchy.locator('[data-node-id="test-rect"]');
-    await expect(selectedNode).toHaveClass(/selected/);
+    // Verify selection using helper which handles ID resolution
+    await verifySelectionSync(page, ['test-rect']);
   });
 
   test('selectMultipleElements should select multiple elements', async ({ page }) => {

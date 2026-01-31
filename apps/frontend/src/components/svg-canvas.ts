@@ -189,6 +189,8 @@ export class SVGCanvas extends HTMLElement {
     // Effect: Update SVG content when document changes
     const documentEffect = effect(() => {
       const doc = documentState.svgDocument.get();
+      // Track rawSVG changes to trigger updates when attributes change
+      documentState.rawSVG.get();
       this.updateSVGContent(doc);
     });
     this.disposeEffects.push(documentEffect);
@@ -311,7 +313,7 @@ export class SVGCanvas extends HTMLElement {
     try {
       // Get the bounding box of the element
       // Note: getBBox may not be available in test environments (jsdom)
-      if (typeof element.getBBox !== 'function') {
+      if (typeof (element as any).getBBox !== 'function') {
         // Fallback for test environments - use element attributes
         const bbox = this.getFallbackBBox(element);
         if (!bbox) return;
@@ -320,7 +322,17 @@ export class SVGCanvas extends HTMLElement {
         return;
       }
 
-      const bbox = element.getBBox();
+      const bbox = (element as SVGGraphicsElement).getBBox();
+      
+      // If getBBox returns empty rect (e.g. not rendered yet), try fallback
+      if (bbox.width === 0 && bbox.height === 0) {
+         const fallback = this.getFallbackBBox(element);
+         if (fallback) {
+           this.drawSelectionBoxToFragment(fallback, fragment);
+           return;
+         }
+      }
+
       this.drawSelectionBoxToFragment(bbox, fragment);
     } catch (error) {
       // Some elements might not support getBBox (e.g., <defs>)
@@ -359,6 +371,18 @@ export class SVGCanvas extends HTMLElement {
         const rx = parseFloat(element.getAttribute('rx') || '0');
         const ry = parseFloat(element.getAttribute('ry') || '0');
         return { x: cx - rx, y: cy - ry, width: rx * 2, height: ry * 2 } as DOMRect;
+      }
+
+      case 'line': {
+        const x1 = parseFloat(element.getAttribute('x1') || '0');
+        const y1 = parseFloat(element.getAttribute('y1') || '0');
+        const x2 = parseFloat(element.getAttribute('x2') || '0');
+        const y2 = parseFloat(element.getAttribute('y2') || '0');
+        const x = Math.min(x1, x2);
+        const y = Math.min(y1, y2);
+        const width = Math.abs(x2 - x1);
+        const height = Math.abs(y2 - y1);
+        return { x, y, width, height } as DOMRect;
       }
       
       default:
@@ -432,8 +456,8 @@ export class SVGCanvas extends HTMLElement {
       // Get bounding box with fallback for test environments
       let bbox: DOMRect | null = null;
       
-      if (typeof hoveredElement.getBBox === 'function') {
-        bbox = hoveredElement.getBBox();
+      if (typeof (hoveredElement as any).getBBox === 'function') {
+        bbox = (hoveredElement as SVGGraphicsElement).getBBox();
       } else {
         bbox = this.getFallbackBBox(hoveredElement);
       }
@@ -665,7 +689,7 @@ export class SVGCanvas extends HTMLElement {
       return null;
     }
     
-    let current = target.parentElement;
+    let current: HTMLElement | null = target.parentElement;
     while (current) {
       if (current instanceof SVGElement && current.tagName !== 'svg') {
         if (current.hasAttribute('id')) {

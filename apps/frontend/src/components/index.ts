@@ -20,4 +20,4 @@ export { SVGHierarchyPanel } from './svg-hierarchy-panel';
 export { SVGRawPanel } from './svg-raw-panel';
 export { SVGAttributeInspector } from './svg-attribute-inspector';
 export { SVGToolPalette, toolPaletteState } from './svg-tool-palette';
-export type { ToolType } from './svg-tool-palette';
+export type { ToolType } from '../types';

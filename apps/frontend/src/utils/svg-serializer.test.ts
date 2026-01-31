@@ -351,7 +351,7 @@ describe('SVGSerializer', () => {
     it('should handle deeply nested structures', () => {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       
-      let current = svg;
+      let current: SVGElement = svg;
       for (let i = 0; i < 5; i++) {
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.setAttribute('id', `group-${i}`);

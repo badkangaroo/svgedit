@@ -43,7 +43,7 @@ export class SVGHierarchyPanel extends HTMLElement {
   private readonly BUFFER_SIZE = 10; // Number of extra nodes to render above/below viewport
   private flatNodes: FlatNode[] = [];
   private isVirtualized = false;
-  private scrollTop = 0;
+  private lastScrollTop = 0;
 
   constructor() {
     super();
@@ -397,7 +397,7 @@ export class SVGHierarchyPanel extends HTMLElement {
   private handleScroll() {
     if (!this.scrollContainer || !this.isVirtualized) return;
 
-    this.scrollTop = this.scrollContainer.scrollTop;
+    this.lastScrollTop = this.scrollContainer.scrollTop;
 
     // Use requestAnimationFrame to batch scroll updates
     requestAnimationFrame(() => {
@@ -534,6 +534,12 @@ export class SVGHierarchyPanel extends HTMLElement {
     content.addEventListener('click', (e) => {
       this.handleNodeClick(e as MouseEvent, node.id);
     });
+
+    // Check if node is selected
+    const selectedIds = documentState.selectedIds.get();
+    if (selectedIds.has(node.id)) {
+      content.classList.add('selected');
+    }
 
     nodeElement.appendChild(content);
 

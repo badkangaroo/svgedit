@@ -99,8 +99,6 @@ test.describe('Element Selection', () => {
 - `verifySelectionSync(page, elementIds)` - Verify selection across panels
 - `getSelectedElements(page)` - Get currently selected element IDs
 
-
-
 ### 2. Attribute Editing Tests (`attribute-editing.spec.ts`)
 
 **Test Strategy:**
@@ -148,8 +146,6 @@ test.describe('Attribute Editing', () => {
 - `editAttribute(page, attributeName, value)` - Edit attribute value
 - `verifyAttributeValue(page, elementId, attributeName, expectedValue)` - Verify attribute
 - `expectValidationError(page, attributeName, errorMessage)` - Check validation
-
-
 
 ### 3. Tool Palette Tests (`tool-palette.spec.ts`)
 
@@ -202,8 +198,6 @@ test.describe('Tool Palette', () => {
 - `drawPrimitive(page, toolName, startX, startY, endX, endY)` - Create primitive
 - `verifyPrimitiveCreated(page, elementType)` - Verify creation
 
-
-
 ### 4. Drag Operations Tests (`drag-operations.spec.ts`)
 
 **Test Strategy:**
@@ -253,8 +247,6 @@ test.describe('Drag Operations', () => {
 - `dragElement(page, elementId, deltaX, deltaY)` - Drag element
 - `getElementPosition(page, elementId)` - Get element coordinates
 - `verifyElementMoved(page, elementId, expectedX, expectedY)` - Verify position
-
-
 
 ### 5. Keyboard Shortcuts Tests (`keyboard-shortcuts.spec.ts`)
 
@@ -307,8 +299,6 @@ test.describe('Keyboard Shortcuts', () => {
 - `pressShortcut(page, shortcut)` - Press keyboard shortcut
 - `verifyShortcutAction(page, action)` - Verify shortcut effect
 
-
-
 ### 6. File Operations Tests (`file-operations.spec.ts`)
 
 **Test Strategy:**
@@ -359,8 +349,6 @@ test.describe('File Operations', () => {
 - `openFileMenu(page)` - Open file menu
 - `clickMenuItem(page, itemName)` - Click menu item
 - `verifyFileDownload(download, expectedContent)` - Verify download
-
-
 
 ### 7. Hierarchy Panel Tests (`hierarchy-panel.spec.ts`)
 
@@ -417,8 +405,6 @@ test.describe('Hierarchy Panel', () => {
 - `expandNode(page, nodeId)` - Expand hierarchy node
 - `collapseNode(page, nodeId)` - Collapse hierarchy node
 - `generateLargeSVG(elementCount)` - Generate test SVG with many elements
-
-
 
 ### 8. Raw SVG Panel Tests (`raw-svg-panel.spec.ts`)
 
@@ -483,8 +469,6 @@ test.describe('Raw SVG Panel', () => {
 - `getRawSVG(page)` - Get raw SVG content
 - `setRawSVG(page, content)` - Set raw SVG content
 - `triggerRawSVGParse(page)` - Trigger parsing
-
-
 
 ### 9. Performance Tests (`performance.spec.ts`)
 
@@ -557,8 +541,6 @@ test.describe('Performance', () => {
 - Large document load (1000 elements): < 2s
 - Drag operations: 55+ fps
 
-
-
 ### 10. Accessibility Tests (`accessibility.spec.ts`)
 
 **Test Strategy:**
@@ -618,8 +600,6 @@ test.describe('Accessibility', () => {
 - Keyboard navigation must work for all controls
 - Focus indicators must be visible
 - State changes must be announced
-
-
 
 ## Helper Functions Design
 
@@ -698,8 +678,6 @@ export async function getSelectedElements(page: Page): Promise<string[]> {
   return ids;
 }
 ```
-
-
 
 ### Attribute Helpers (`attribute-helpers.ts`)
 
@@ -802,8 +780,6 @@ export async function verifyPrimitiveCreated(
   await expect(element).toBeVisible();
 }
 ```
-
-
 
 ### Drag Helpers (`drag-helpers.ts`)
 
@@ -912,8 +888,6 @@ export function generateTestSVG(): string {
 }
 ```
 
-
-
 ## Test Execution Strategy
 
 ### Parallel Execution
@@ -1002,8 +976,6 @@ jobs:
           path: apps/frontend/test-results/
 ```
 
-
-
 ## Test Data Management
 
 ### SVG Test Fixtures
@@ -1087,8 +1059,6 @@ When component behavior changes:
 3. Use Playwright's auto-waiting features
 4. Consider retry strategy for CI
 
-
-
 ## Implementation Phases
 
 ### Phase 1: Core Functionality (Priority: High)
@@ -1164,7 +1134,16 @@ When component behavior changes:
 ### Risk: Test Maintenance Burden
 **Mitigation:** Invest in helper functions and clear test organization upfront
 
-## Conclusion
+## Implementation Notes
 
-This design provides a comprehensive strategy for expanding UI test coverage to include all SVG editing functions. The phased approach allows for incremental delivery while the helper function library ensures maintainability and reduces duplication.
+### Reactivity and State Management
+- `svg-canvas` relies on `svgDocument` signal for rendering.
+- `SVGAttributeInspector` modifies the `svgDocument` DOM structure in-place.
+- Signals (reference-based) do not automatically emit when an object property is mutated in-place.
+- **CRITICAL**: `svg-canvas` MUST subscribe to `rawSVG` signal in addition to `svgDocument` to catch updates triggered by `SVGAttributeInspector`. The inspector updates `rawSVG` via `documentStateUpdater` after modifying attributes.
+- This pattern ensures that `svg-canvas` re-renders (cloning the updated document) whenever attributes change, maintaining consistency across views.
 
+### Tool Palette Testing
+- Tool activation relies on `toolPaletteState.activeTool`.
+- Drag operations in Playwright (headless) can be flaky if canvas dimensions or visibility are not fully stabilized.
+- Ensure proper waits (`waitForEditorReady`, `waitForTimeout`) after selecting tools and before dragging to allow state propagation.

@@ -19,8 +19,8 @@ export async function selectElement(page: Page, elementId: string): Promise<void
   const element = canvas.locator(`svg [id="${elementId}"], svg [data-original-id="${elementId}"]`).first();
   await element.click();
   
-  // Wait for selection to propagate
-  await page.waitForTimeout(100);
+  // Wait for selection to propagate and inspector to update
+  await page.waitForTimeout(300);
 }
 
 
@@ -79,13 +79,12 @@ export async function verifySelectionSync(
   // Verify canvas selection - check for selection outlines
   const canvas = page.locator('svg-canvas');
   const selectionOutlines = canvas.locator('.selection-outline');
-  const outlineCount = await selectionOutlines.count();
-  expect(outlineCount).toBe(elementIds.length);
+  await expect(selectionOutlines).toHaveCount(elementIds.length);
   
   // Verify hierarchy selection using resolved IDs
   const hierarchy = page.locator('svg-hierarchy-panel');
   for (const id of resolvedIds) {
-    const node = hierarchy.locator(`[data-node-id="${id}"]`);
+    const node = hierarchy.locator(`.node-content[data-node-id="${id}"]`);
     await expect(node).toHaveClass(/selected/);
   }
   
@@ -93,7 +92,7 @@ export async function verifySelectionSync(
   if (elementIds.length === 1) {
     const inspector = page.locator('svg-attribute-inspector');
     // Inspector might take time to update or animate
-    await expect(inspector.locator('.element-info, .element-tag')).toBeVisible();
+    await expect(inspector.locator('.element-info')).toBeVisible();
   }
 }
 

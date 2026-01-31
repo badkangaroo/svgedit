@@ -23,26 +23,34 @@ export async function editAttribute(
   attributeName: string, 
   value: string
 ): Promise<void> {
-  // Wait for inspector to be present in DOM
-  await page.waitForSelector('svg-attribute-inspector', { state: 'attached' });
+  // Wait for app and inspector to be visible
+  await page.waitForSelector('svg-editor-app', { state: 'visible', timeout: 10000 });
   
-  // Wait for the specific field to be present in shadow DOM
-  await page.waitForFunction((attr) => {
-    const inspector = document.querySelector('svg-attribute-inspector');
-    if (!inspector || !inspector.shadowRoot) return false;
-    return !!inspector.shadowRoot.querySelector(`[data-attribute-name="${attr}"]`);
-  }, attributeName, { timeout: 5000 });
+  // Wait a bit for the inspector to fully render after selection
+  await page.waitForTimeout(500);
   
   // Use page.evaluate to interact with shadow DOM directly
-  await page.evaluate(({ attr, val }) => {
-    const inspector = document.querySelector('svg-attribute-inspector');
+  const success = await page.evaluate(({ attr, val }) => {
+    // Navigate through app shadow DOM to get to inspector
+    const app = document.querySelector('svg-editor-app');
+    if (!app || !app.shadowRoot) {
+      console.error('App or app shadowRoot not found');
+      return false;
+    }
+    
+    const inspector = app.shadowRoot.querySelector('svg-attribute-inspector');
     if (!inspector || !inspector.shadowRoot) {
-      throw new Error('Inspector not found');
+      console.error('Inspector or inspector shadowRoot not found');
+      return false;
     }
     
     const field = inspector.shadowRoot.querySelector(`[data-attribute-name="${attr}"]`);
     if (!field) {
-      throw new Error(`Attribute field "${attr}" not found`);
+      console.error(`Attribute field "${attr}" not found`);
+      // Log available fields for debugging
+      const allFields = inspector.shadowRoot.querySelectorAll('[data-attribute-name]');
+      console.log('Available fields:', Array.from(allFields).map(f => f.getAttribute('data-attribute-name')));
+      return false;
     }
     
     // Find the input element - prefer text input for colors
@@ -52,7 +60,8 @@ export async function editAttribute(
     }
     
     if (!input) {
-      throw new Error(`Input for attribute "${attr}" not found`);
+      console.error(`Input for attribute "${attr}" not found`);
+      return false;
     }
     
     // Set the value and trigger blur event
@@ -60,7 +69,12 @@ export async function editAttribute(
     input.dispatchEvent(new Event('input', { bubbles: true })); // Trigger input first
     input.dispatchEvent(new Event('change', { bubbles: true })); // Then change
     input.dispatchEvent(new Event('blur', { bubbles: true })); // Then blur
+    return true;
   }, { attr: attributeName, val: value });
+  
+  if (!success) {
+    throw new Error(`Failed to edit attribute "${attributeName}"`);
+  }
   
   // Wait for the change to propagate through the system
   await page.waitForTimeout(150);

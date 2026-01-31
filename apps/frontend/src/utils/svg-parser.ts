@@ -142,6 +142,15 @@ export class SVGParser {
     // Generate unique ID for this node
     const id = this.idGenerator.generate();
     
+    // Generate a stable UUID for identifying elements across sessions/tests
+    if (!element.hasAttribute('data-uuid')) {
+      // Use crypto.randomUUID if available, otherwise fallback to math random
+      const uuid = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : `uuid-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      element.setAttribute('data-uuid', uuid);
+    }
+
     // Assign the ID to the element if it doesn't have one
     if (!element.hasAttribute('id')) {
       element.setAttribute('id', id);

@@ -23,7 +23,7 @@
   - [x] 1.3.4 Add unit tests for helper functions
 
 - [x] 1.4 Create `tests/helpers/test-data-generators.ts`
-  - [x] 1.4.1 Implement `generateLargeSVG(elementCount)` function
+  - [x] 1.4.1 Implement `generateLargeSVG(elementCount)` functio
   - [x] 1.4.2 Implement `generateTestSVG()` function
   - [x] 1.4.3 Add validation tests for generated SVG
 
@@ -42,20 +42,20 @@
   - [x] 2.1.6 Run tests across all browsers (Chromium, Firefox, WebKit)
 
 ### 3. Attribute Editing Tests
-- [ ] 3.1 Create `tests/e2e/playwright/attribute-editing.spec.ts`
-  - [ ] 3.1.1 Write test: "should edit numeric attributes (x, y, width, height)"
-  - [ ] 3.1.2 Write test: "should edit color attributes (fill, stroke)"
-  - [ ] 3.1.3 Write test: "should update canvas when attribute changes"
-  - [ ] 3.1.4 Write test: "should update raw SVG when attribute changes"
-  - [ ] 3.1.5 Write test: "should validate numeric attribute ranges"
-  - [ ] 3.1.6 Write test: "should validate color attribute formats"
-  - [ ] 3.1.7 Write test: "should show validation errors for invalid input"
-  - [ ] 3.1.8 Write test: "should rollback invalid changes"
-  - [ ] 3.1.9 Run tests across all browsers
+- [x] 3.1 Create `tests/e2e/playwright/attribute-editing.spec.ts`
+  - [x] 3.1.1 Write test: "should edit numeric attributes (x, y, width, height)"
+  - [x] 3.1.2 Write test: "should edit color attributes (fill, stroke)"
+  - [x] 3.1.3 Write test: "should update canvas when attribute changes"
+  - [x] 3.1.4 Write test: "should update raw SVG when attribute changes"
+  - [x] 3.1.5 Write test: "should validate numeric attribute ranges"
+  - [x] 3.1.6 Write test: "should validate color attribute formats"
+  - [x] 3.1.7 Write test: "should show validation errors for invalid input"
+  - [x] 3.1.8 Write test: "should rollback invalid changes"
+  - [x] 3.1.9 Run tests across all browsers
 
 ### 4. Tool Palette Tests
-- [ ] 4.1 Create `tests/e2e/playwright/tool-palette.spec.ts`
-  - [ ] 4.1.1 Write test: "should activate tool on click"
+- [x] 4.1 Create `tests/e2e/playwright/tool-palette.spec.ts`
+  - [x] 4.1.1 Write test: "should activate tool on click"
   - [ ] 4.1.2 Write test: "should create rectangle with drag"
   - [ ] 4.1.3 Write test: "should create circle with drag"
   - [ ] 4.1.4 Write test: "should create ellipse with drag"

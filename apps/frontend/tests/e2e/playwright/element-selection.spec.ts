@@ -44,9 +44,10 @@ test.describe('Element Selection', () => {
     await expect(canvas.locator('.selection-outline')).toBeVisible();
     
     // 2. Check Hierarchy Panel
-    const hierarchy = page.locator('svg-hierarchy-panel');
-    const selectedNode = hierarchy.locator('[data-node-id="test-circle"]');
-    await expect(selectedNode).toHaveClass(/selected/);
+    // Note: verifySelectionSync already checks the hierarchy panel with correct ID resolution
+    // const hierarchy = page.locator('svg-hierarchy-panel');
+    // const selectedNode = hierarchy.locator('.node-content[data-node-id="test-circle"]');
+    // await expect(selectedNode).toHaveClass(/selected/);
     
     // 3. Check Attribute Inspector
     const inspector = page.locator('svg-attribute-inspector');
@@ -102,6 +103,8 @@ test.describe('Element Selection', () => {
     const handles = canvas.locator('.selection-handle');
     // A standard selection box usually has 4 corner handles + maybe 4 edge handles
     // Expect at least 4 handles
-    expect(await handles.count()).toBeGreaterThanOrEqual(4);
+    await expect(async () => {
+      expect(await handles.count()).toBeGreaterThanOrEqual(4);
+    }).toPass();
   });
 });

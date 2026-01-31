@@ -45,6 +45,14 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
 
 
 /**
+ * Initialize a new empty document
+ */
+export async function initializeNewDocument(page: Page): Promise<void> {
+  const emptySVG = '<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg"></svg>';
+  await loadSVGContent(page, emptySVG);
+}
+
+/**
  * Wait for the editor to be fully initialized
  */
 export async function waitForEditorReady(page: Page): Promise<void> {
@@ -66,12 +74,12 @@ export async function waitForEditorReady(page: Page): Promise<void> {
  * Get the selected element ID from the document state
  */
 export async function getSelectedElementId(page: Page): Promise<string | null> {
-  return await page.evaluate(() => {
+  return await page.evaluate<string | null>(() => {
     const { documentState } = (window as any);
     if (!documentState) return null;
     
     const selectedIds = documentState.selectedIds.get();
-    return selectedIds.size > 0 ? Array.from(selectedIds)[0] : null;
+    return (selectedIds.size > 0 ? Array.from(selectedIds)[0] : null) as string | null;
   });
 }
 

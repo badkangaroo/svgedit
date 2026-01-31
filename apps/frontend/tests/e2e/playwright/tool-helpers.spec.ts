@@ -14,12 +14,13 @@ import {
   verifyToolActive,
   getElementCount
 } from '../../helpers/tool-helpers';
-import { waitForEditorReady } from '../../helpers/svg-helpers';
+import { waitForEditorReady, initializeNewDocument } from '../../helpers/svg-helpers';
 
 test.describe('Tool Helpers', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await waitForEditorReady(page);
+    await initializeNewDocument(page);
   });
 
   test.describe('selectTool', () => {
@@ -226,6 +227,9 @@ test.describe('Tool Helpers', () => {
       // Draw an ellipse
       await drawPrimitive(page, 'ellipse', 200, 100, 350, 200);
       
+      // Wait for the raw panel to update
+      await page.waitForTimeout(500);
+
       // Verify raw SVG panel contains the ellipse
       const rawPanel = page.locator('svg-raw-panel');
       const rawContent = await rawPanel.textContent();

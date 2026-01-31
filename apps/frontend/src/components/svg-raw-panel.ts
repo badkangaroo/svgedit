@@ -492,6 +492,7 @@ export class SVGRawPanel extends HTMLElement {
           <div class="empty-state-hint">Open an SVG file or create a new document to view the raw SVG</div>
         </div>
       `;
+      this.lastValidSVG = ''; // Clear last valid SVG if no document
       return;
     }
 

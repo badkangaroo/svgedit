@@ -23,17 +23,30 @@ import { Page, expect } from '@playwright/test';
  * @param toolName - Name of the tool to select (e.g., 'select', 'rectangle', 'circle', 'ellipse', 'line', 'path', 'text', 'group')
  */
 export async function selectTool(page: Page, toolName: string): Promise<void> {
-  // Wait for tool palette to be present and have shadow root with the tool button
+  // First wait for the app and tool palette elements to exist
+  await page.waitForSelector('svg-editor-app', { timeout: 10000 });
+  
+  // Then wait for shadow root and tool button to be available
+  // The tool palette is inside the app's shadow DOM
   await page.waitForFunction((tool) => {
-    const toolPalette = document.querySelector('svg-tool-palette');
+    const app = document.querySelector('svg-editor-app');
+    if (!app || !app.shadowRoot) return false;
+    
+    const toolPalette = app.shadowRoot.querySelector('svg-tool-palette');
     if (!toolPalette || !toolPalette.shadowRoot) return false;
+    
     const toolButton = toolPalette.shadowRoot.querySelector(`[data-tool="${tool}"]`);
     return toolButton !== null;
   }, toolName, { timeout: 10000 });
   
   // Use page.evaluate to interact with shadow DOM directly
   await page.evaluate((tool) => {
-    const toolPalette = document.querySelector('svg-tool-palette');
+    const app = document.querySelector('svg-editor-app');
+    if (!app || !app.shadowRoot) {
+      throw new Error('App not found');
+    }
+    
+    const toolPalette = app.shadowRoot.querySelector('svg-tool-palette');
     if (!toolPalette || !toolPalette.shadowRoot) {
       throw new Error('Tool palette not found');
     }
@@ -51,7 +64,10 @@ export async function selectTool(page: Page, toolName: string): Promise<void> {
   
   // Verify the tool is now active
   const isActive = await page.evaluate((tool) => {
-    const toolPalette = document.querySelector('svg-tool-palette');
+    const app = document.querySelector('svg-editor-app');
+    if (!app || !app.shadowRoot) return false;
+    
+    const toolPalette = app.shadowRoot.querySelector('svg-tool-palette');
     if (!toolPalette || !toolPalette.shadowRoot) return false;
     
     const toolButton = toolPalette.shadowRoot.querySelector(`[data-tool="${tool}"]`);
@@ -86,6 +102,9 @@ export async function drawPrimitive(
 ): Promise<void> {
   // First, select the tool
   await selectTool(page, toolName);
+  
+  // Wait for state to propagate
+  await page.waitForTimeout(300);
   
   // Get the canvas bounding box
   const canvas = page.locator('svg-canvas');
@@ -147,7 +166,10 @@ export async function verifyPrimitiveCreated(
  */
 export async function getActiveTool(page: Page): Promise<string | null> {
   return await page.evaluate(() => {
-    const toolPalette = document.querySelector('svg-tool-palette');
+    const app = document.querySelector('svg-editor-app');
+    if (!app || !app.shadowRoot) return null;
+    
+    const toolPalette = app.shadowRoot.querySelector('svg-tool-palette');
     if (!toolPalette || !toolPalette.shadowRoot) return null;
     
     const activeButton = toolPalette.shadowRoot.querySelector('.tool-button.active');
