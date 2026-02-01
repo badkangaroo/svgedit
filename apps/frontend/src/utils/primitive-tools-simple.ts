@@ -80,6 +80,8 @@ export function getElementTagName(tool: ToolType): string {
   }
 }
 
+import { generateUUID } from './uuid';
+
 /**
  * Create a primitive element with default attributes
  */
@@ -91,6 +93,10 @@ export function createPrimitiveElement(
   currentY: number
 ): SVGElement {
   const element = document.createElementNS('http://www.w3.org/2000/svg', getElementTagName(tool));
+  
+  // Add unique identifier
+  element.setAttribute('data-uuid', generateUUID());
+  
   setPrimitiveAttributes(element, tool, startX, startY, currentX, currentY);
   return element;
 }

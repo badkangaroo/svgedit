@@ -69,6 +69,14 @@ npm run build
 npm run preview
 ```
 
+## Element Identification
+
+Each SVG element in the editor is assigned a stable UUID via the `data-uuid` attribute.
+- This UUID is generated when an element is created or when an SVG is loaded.
+- It provides a persistent identifier for elements across sessions and during testing.
+- The `data-uuid` attribute is stripped when saving or exporting the SVG to ensure clean output.
+- Selection and updates are tracked using this `data-uuid` to handle cases where `id` attributes may be non-unique or missing.
+
 ## Planning & Checkpoints
 
 Short sprints with observable results aligned to the main roadmap.

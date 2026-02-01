@@ -205,8 +205,8 @@ export class SVGCanvas extends HTMLElement {
 
     // Effect: Update hover visuals when hover changes
     const hoverEffect = effect(() => {
-      const hoveredId = documentState.hoveredId.get();
-      this.updateHoverVisuals(hoveredId);
+      const hoveredUUID = documentState.hoveredUUID.get();
+      this.updateHoverVisuals(hoveredUUID);
     });
     this.disposeEffects.push(hoverEffect);
   }
@@ -432,25 +432,25 @@ export class SVGCanvas extends HTMLElement {
   /**
    * Update hover visual indicators
    */
-  private updateHoverVisuals(hoveredId: string | null) {
+  private updateHoverVisuals(hoveredUUID: string | null) {
     if (!this.selectionOverlay) return;
 
     // Remove existing hover indicators
     const existingHover = this.selectionOverlay.querySelectorAll('.hover-outline');
     existingHover.forEach(el => el.remove());
 
-    if (!hoveredId) return;
+    if (!hoveredUUID) return;
 
     // Find the hovered element
     const doc = documentState.svgDocument.get();
     if (!doc) return;
 
-    const hoveredElement = doc.querySelector(`[id="${hoveredId}"]`) as SVGElement | null;
+    const hoveredElement = doc.querySelector(`[data-uuid="${hoveredUUID}"]`) as SVGElement | null;
     if (!hoveredElement) return;
 
     // Don't show hover if element is already selected
-    const selectedIds = documentState.selectedIds.get();
-    if (selectedIds.has(hoveredId)) return;
+    const selectedUUIDs = documentState.selectedUUIDs.get();
+    if (selectedUUIDs.has(hoveredUUID)) return;
 
     try {
       // Get bounding box with fallback for test environments
@@ -607,10 +607,10 @@ export class SVGCanvas extends HTMLElement {
     const hoveredElement = this.findSVGElement(mouseEvent.target as HTMLElement);
     
     if (hoveredElement) {
-      const elementId = hoveredElement.getAttribute('id');
-      documentState.hoveredId.set(elementId);
+      const elementUUID = hoveredElement.getAttribute('data-uuid');
+      documentState.hoveredUUID.set(elementUUID);
     } else {
-      documentState.hoveredId.set(null);
+      documentState.hoveredUUID.set(null);
     }
   };
 
@@ -660,7 +660,7 @@ export class SVGCanvas extends HTMLElement {
     
     this.isMouseDown = false;
     this.mouseDownTarget = null;
-    documentState.hoveredId.set(null);
+    documentState.hoveredUUID.set(null);
   };
 
   /**

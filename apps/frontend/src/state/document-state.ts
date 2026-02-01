@@ -20,10 +20,11 @@ export interface DocumentState {
   rawSVG: Signal<string>;
   
   // Selection signals
-  selectedIds: Signal<Set<string>>;
-  hoveredId: Signal<string | null>;
+  selectedUUIDs: Signal<Set<string>>;
+  hoveredUUID: Signal<string | null>;
   
   // Computed values
+  selectedIds: Computed<Set<string>>;
   hasSelection: Computed<boolean>;
   selectionCount: Computed<number>;
   selectedElements: Computed<SVGElement[]>;
@@ -40,27 +41,47 @@ export function createDocumentState(): DocumentState {
   const rawSVG = signal<string>('');
   
   // Selection signals
-  const selectedIds = signal<Set<string>>(new Set());
-  const hoveredId = signal<string | null>(null);
+  const selectedUUIDs = signal<Set<string>>(new Set());
+  const hoveredUUID = signal<string | null>(null);
+  
+  // Computed: Get selected element IDs from UUIDs
+  const selectedIds = computed(() => {
+    const doc = svgDocument.get();
+    const uuids = selectedUUIDs.get();
+    
+    if (!doc || uuids.size === 0) {
+      return new Set<string>();
+    }
+    
+    const ids = new Set<string>();
+    uuids.forEach(uuid => {
+      const element = doc.querySelector(`[data-uuid="${uuid}"]`);
+      if (element && element.id) {
+        ids.add(element.id);
+      }
+    });
+    
+    return ids;
+  });
   
   // Computed: Check if any elements are selected
-  const hasSelection = computed(() => selectedIds.get().size > 0);
+  const hasSelection = computed(() => selectedUUIDs.get().size > 0);
   
   // Computed: Count of selected elements
-  const selectionCount = computed(() => selectedIds.get().size);
+  const selectionCount = computed(() => selectedUUIDs.get().size);
   
   // Computed: Get selected SVG elements from the document
   const selectedElements = computed(() => {
     const doc = svgDocument.get();
-    const ids = selectedIds.get();
+    const uuids = selectedUUIDs.get();
     
-    if (!doc || ids.size === 0) {
+    if (!doc || uuids.size === 0) {
       return [];
     }
     
     const elements: SVGElement[] = [];
-    ids.forEach(id => {
-      const element = doc.querySelector(`[id="${id}"]`) as SVGElement | null;
+    uuids.forEach(uuid => {
+      const element = doc.querySelector(`[data-uuid="${uuid}"]`) as SVGElement | null;
       if (element) {
         elements.push(element);
       }
@@ -72,18 +93,18 @@ export function createDocumentState(): DocumentState {
   // Computed: Get selected document nodes from the tree
   const selectedNodes = computed(() => {
     const tree = documentTree.get();
-    const ids = selectedIds.get();
+    const uuids = selectedUUIDs.get();
     
-    if (tree.length === 0 || ids.size === 0) {
+    if (tree.length === 0 || uuids.size === 0) {
       return [];
     }
     
     const nodes: DocumentNode[] = [];
     
-    // Recursive function to find nodes by ID
+    // Recursive function to find nodes by UUID
     const findNodes = (nodeList: DocumentNode[]) => {
       for (const node of nodeList) {
-        if (ids.has(node.id)) {
+        if (node.attributes.has('data-uuid') && uuids.has(node.attributes.get('data-uuid')!)) {
           nodes.push(node);
         }
         if (node.children.length > 0) {
@@ -100,8 +121,9 @@ export function createDocumentState(): DocumentState {
     svgDocument,
     documentTree,
     rawSVG,
+    selectedUUIDs,
+    hoveredUUID,
     selectedIds,
-    hoveredId,
     hasSelection,
     selectionCount,
     selectedElements,
@@ -120,18 +142,37 @@ export interface DocumentStateUpdater {
   clearDocument(): void;
   
   // Selection updates
-  select(ids: string[]): void;
-  addToSelection(ids: string[]): void;
-  removeFromSelection(ids: string[]): void;
+  select(uuids: string[]): void;
+  selectByIds(ids: string[]): void;
+  addToSelection(uuids: string[]): void;
+  removeFromSelection(uuids: string[]): void;
   clearSelection(): void;
-  toggleSelection(id: string): void;
-  setHoveredId(id: string | null): void;
+  toggleSelection(uuid: string): void;
+  setHoveredUUID(uuid: string | null): void;
 }
 
 /**
  * Create state updater functions for the document state
  */
 export function createDocumentStateUpdater(state: DocumentState): DocumentStateUpdater {
+  // Helper to convert IDs to UUIDs
+  const idsToUUIDs = (ids: string[]): string[] => {
+    const doc = state.svgDocument.get();
+    if (!doc) return [];
+    
+    const uuids: string[] = [];
+    ids.forEach(id => {
+      const element = doc.querySelector(`[id="${id}"]`);
+      if (element) {
+        const uuid = element.getAttribute('data-uuid');
+        if (uuid) {
+          uuids.push(uuid);
+        }
+      }
+    });
+    return uuids;
+  };
+
   return {
     // Document updates
     setDocument(doc: SVGElement | null, tree: DocumentNode[], svg: string): void {
@@ -152,42 +193,47 @@ export function createDocumentStateUpdater(state: DocumentState): DocumentStateU
       state.svgDocument.set(null);
       state.documentTree.set([]);
       state.rawSVG.set('');
-      state.selectedIds.set(new Set());
+      state.selectedUUIDs.set(new Set());
     },
     
     // Selection updates
-    select(ids: string[]): void {
-      state.selectedIds.set(new Set(ids));
+    select(uuids: string[]): void {
+      state.selectedUUIDs.set(new Set(uuids));
     },
     
-    addToSelection(ids: string[]): void {
-      const current = new Set(state.selectedIds.get());
-      ids.forEach(id => current.add(id));
-      state.selectedIds.set(current);
+    selectByIds(ids: string[]): void {
+      const uuids = idsToUUIDs(ids);
+      state.selectedUUIDs.set(new Set(uuids));
     },
     
-    removeFromSelection(ids: string[]): void {
-      const current = new Set(state.selectedIds.get());
-      ids.forEach(id => current.delete(id));
-      state.selectedIds.set(current);
+    addToSelection(uuids: string[]): void {
+      const current = new Set(state.selectedUUIDs.get());
+      uuids.forEach(uuid => current.add(uuid));
+      state.selectedUUIDs.set(current);
+    },
+    
+    removeFromSelection(uuids: string[]): void {
+      const current = new Set(state.selectedUUIDs.get());
+      uuids.forEach(uuid => current.delete(uuid));
+      state.selectedUUIDs.set(current);
     },
     
     clearSelection(): void {
-      state.selectedIds.set(new Set());
+      state.selectedUUIDs.set(new Set());
     },
     
-    toggleSelection(id: string): void {
-      const current = new Set(state.selectedIds.get());
-      if (current.has(id)) {
-        current.delete(id);
+    toggleSelection(uuid: string): void {
+      const current = new Set(state.selectedUUIDs.get());
+      if (current.has(uuid)) {
+        current.delete(uuid);
       } else {
-        current.add(id);
+        current.add(uuid);
       }
-      state.selectedIds.set(current);
+      state.selectedUUIDs.set(current);
     },
     
-    setHoveredId(id: string | null): void {
-      state.hoveredId.set(id);
+    setHoveredUUID(uuid: string | null): void {
+      state.hoveredUUID.set(uuid);
     },
   };
 }

@@ -22,6 +22,9 @@ export interface SerializerOptions {
   
   /** Whether to clean up editor-specific attributes (default: true) */
   cleanupEditorAttributes?: boolean;
+  
+  /** Whether to keep the data-uuid attribute during cleanup (default: false) */
+  keepUUID?: boolean;
 }
 
 /**
@@ -36,6 +39,7 @@ export class SVGSerializer {
       indent: options.indent ?? '  ',
       sortAttributes: options.sortAttributes ?? true,
       cleanupEditorAttributes: options.cleanupEditorAttributes ?? true,
+      keepUUID: options.keepUUID ?? false,
     };
   }
   
@@ -43,27 +47,38 @@ export class SVGSerializer {
    * Serialize an SVG element to formatted SVG text
    * 
    * @param element - The SVG element to serialize
+   * @param options - Optional override options for this serialization
    * @returns Formatted SVG string
    */
-  serialize(element: SVGElement): string {
+  serialize(element: SVGElement, options?: SerializerOptions): string {
+    // Merge default options with overrides
+    const currentOptions = { ...this.options, ...options };
+    
     // Clone the element to avoid modifying the original
     const cloned = element.cloneNode(true) as SVGElement;
     
     // Clean up editor-specific attributes if requested
-    if (this.options.cleanupEditorAttributes) {
-      this.cleanupElement(cloned);
+    if (currentOptions.cleanupEditorAttributes) {
+      this.cleanupElement(cloned, currentOptions.keepUUID);
     }
     
-    // Serialize the element
-    return this.serializeElement(cloned, 0);
+    // Serialize the element (passing options down would require changing signature, 
+    // but serializeElement only uses prettyPrint/indent which are in this.options or need to be passed)
+    // Actually serializeElement uses this.options. 
+    // I should temporarily swap options or pass them.
+    // Simpler: Create a temporary serializer or just update serializeElement signature.
+    // Or just bind the options.
+    
+    return this.serializeElementWithConfig(cloned, 0, currentOptions);
   }
   
   /**
    * Clean up editor-specific attributes from an element and its children
    * 
    * @param element - The element to clean up
+   * @param keepUUID - Whether to keep data-uuid
    */
-  private cleanupElement(element: Element): void {
+  private cleanupElement(element: Element, keepUUID: boolean): void {
     // Remove editor-specific attributes
     // - Generated IDs (svg-node-*)
     // - data-original-id (used to store original IDs)
@@ -85,8 +100,10 @@ export class SVGSerializer {
     // Remove data-original-id if it exists
     element.removeAttribute('data-original-id');
     
-    // Remove the internal data-uuid attribute
-    element.removeAttribute('data-uuid');
+    // Remove the internal data-uuid attribute unless requested to keep
+    if (!keepUUID) {
+      element.removeAttribute('data-uuid');
+    }
     
     // Remove any other editor-specific attributes (e.g., selection markers)
     element.removeAttribute('data-selected');
@@ -94,26 +111,22 @@ export class SVGSerializer {
     
     // Recursively clean up children
     for (let i = 0; i < element.children.length; i++) {
-      this.cleanupElement(element.children[i]);
+      this.cleanupElement(element.children[i], keepUUID);
     }
   }
-  
+
   /**
-   * Serialize a single element and its children
-   * 
-   * @param element - The element to serialize
-   * @param depth - Current indentation depth
-   * @returns XML text for this element and its children
+   * Serialize a single element and its children with specific config
    */
-  private serializeElement(element: Element, depth: number): string {
-    const indent = this.options.prettyPrint ? this.options.indent.repeat(depth) : '';
-    const newline = this.options.prettyPrint ? '\n' : '';
+  private serializeElementWithConfig(element: Element, depth: number, config: Required<SerializerOptions>): string {
+    const indent = config.prettyPrint ? config.indent.repeat(depth) : '';
+    const newline = config.prettyPrint ? '\n' : '';
     
     // Build opening tag
     let result = `${indent}<${element.tagName.toLowerCase()}`;
     
     // Add attributes
-    const attributes = this.serializeAttributes(element);
+    const attributes = this.serializeAttributesWithConfig(element, config);
     if (attributes) {
       result += ` ${attributes}`;
     }
@@ -142,7 +155,7 @@ export class SVGSerializer {
         
         // Serialize children
         for (let i = 0; i < element.children.length; i++) {
-          result += this.serializeElement(element.children[i], depth + 1);
+          result += this.serializeElementWithConfig(element.children[i], depth + 1, config);
         }
         
         // Add indent before closing tag
@@ -154,6 +167,43 @@ export class SVGSerializer {
     }
     
     return result;
+  }
+
+  /**
+   * Serialize attributes to a string with config
+   */
+  private serializeAttributesWithConfig(element: Element, config: Required<SerializerOptions>): string {
+    if (element.attributes.length === 0) {
+      return '';
+    }
+    
+    // Get attribute entries
+    let entries: Array<[string, string]> = [];
+    for (let i = 0; i < element.attributes.length; i++) {
+      const attr = element.attributes[i];
+      entries.push([attr.name, attr.value]);
+    }
+    
+    // Sort alphabetically for deterministic output
+    if (config.sortAttributes) {
+      entries = entries.sort((a, b) => a[0].localeCompare(b[0]));
+    }
+    
+    // Format as key="value" pairs
+    return entries
+      .map(([key, value]) => `${key}="${this.escapeAttributeValue(value)}"`)
+      .join(' ');
+  }
+
+  /**
+   * Serialize a single element and its children (legacy method using instance options)
+   * 
+   * @param element - The element to serialize
+   * @param depth - Current indentation depth
+   * @returns XML text for this element and its children
+   */
+  private serializeElement(element: Element, depth: number): string {
+    return this.serializeElementWithConfig(element, depth, this.options);
   }
   
   /**
@@ -180,26 +230,7 @@ export class SVGSerializer {
    * @returns Formatted attribute string
    */
   private serializeAttributes(element: Element): string {
-    if (element.attributes.length === 0) {
-      return '';
-    }
-    
-    // Get attribute entries
-    let entries: Array<[string, string]> = [];
-    for (let i = 0; i < element.attributes.length; i++) {
-      const attr = element.attributes[i];
-      entries.push([attr.name, attr.value]);
-    }
-    
-    // Sort alphabetically for deterministic output
-    if (this.options.sortAttributes) {
-      entries = entries.sort((a, b) => a[0].localeCompare(b[0]));
-    }
-    
-    // Format as key="value" pairs
-    return entries
-      .map(([key, value]) => `${key}="${this.escapeAttributeValue(value)}"`)
-      .join(' ');
+    return this.serializeAttributesWithConfig(element, this.options);
   }
   
   /**

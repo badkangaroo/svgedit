@@ -55,7 +55,16 @@ export class SelectionManager {
    * @param ids - Array of element IDs to select
    */
   select(ids: string[]): void {
-    documentStateUpdater.select(ids);
+    documentStateUpdater.selectByIds(ids);
+  }
+
+  /**
+   * Select elements by their UUIDs (replaces current selection)
+   * 
+   * @param uuids - Array of element UUIDs to select
+   */
+  selectByUUIDs(uuids: string[]): void {
+    documentStateUpdater.select(uuids);
   }
 
   /**
@@ -64,7 +73,25 @@ export class SelectionManager {
    * @param ids - Array of element IDs to add to selection
    */
   addToSelection(ids: string[]): void {
-    documentStateUpdater.addToSelection(ids);
+    // We need to convert IDs to UUIDs first because documentStateUpdater.addToSelection expects UUIDs
+    // But wait, DocumentStateUpdater methods were updated to take UUIDs.
+    // I need to add helper methods in SelectionManager or expose helpers from DocumentStateUpdater.
+    // Let's rely on DocumentStateUpdater having both? No, I only added selectByIds.
+    // I should probably add addByIds, removeByIds etc to DocumentStateUpdater if I want to support IDs fully.
+    // OR, I can implement conversion here in SelectionManager using DocumentState.
+    
+    // Let's implement conversion here.
+    const uuids = this.idsToUUIDs(ids);
+    documentStateUpdater.addToSelection(uuids);
+  }
+
+  /**
+   * Add elements to the current selection by UUIDs
+   * 
+   * @param uuids - Array of element UUIDs to add to selection
+   */
+  addToSelectionByUUIDs(uuids: string[]): void {
+    documentStateUpdater.addToSelection(uuids);
   }
 
   /**
@@ -73,7 +100,17 @@ export class SelectionManager {
    * @param ids - Array of element IDs to remove from selection
    */
   removeFromSelection(ids: string[]): void {
-    documentStateUpdater.removeFromSelection(ids);
+    const uuids = this.idsToUUIDs(ids);
+    documentStateUpdater.removeFromSelection(uuids);
+  }
+
+  /**
+   * Remove elements from the current selection by UUIDs
+   * 
+   * @param uuids - Array of element UUIDs to remove from selection
+   */
+  removeFromSelectionByUUIDs(uuids: string[]): void {
+    documentStateUpdater.removeFromSelection(uuids);
   }
 
   /**
@@ -89,7 +126,39 @@ export class SelectionManager {
    * @param id - Element ID to toggle
    */
   toggleSelection(id: string): void {
-    documentStateUpdater.toggleSelection(id);
+     const uuids = this.idsToUUIDs([id]);
+     if (uuids.length > 0) {
+       documentStateUpdater.toggleSelection(uuids[0]);
+     }
+  }
+
+  /**
+   * Toggle selection of a single element by UUID
+   * 
+   * @param uuid - Element UUID to toggle
+   */
+  toggleSelectionByUUID(uuid: string): void {
+    documentStateUpdater.toggleSelection(uuid);
+  }
+
+  /**
+   * Helper to convert IDs to UUIDs
+   */
+  private idsToUUIDs(ids: string[]): string[] {
+    const doc = documentState.svgDocument.get();
+    if (!doc) return [];
+    
+    const uuids: string[] = [];
+    ids.forEach(id => {
+      const element = doc.querySelector(`[id="${id}"]`);
+      if (element) {
+        const uuid = element.getAttribute('data-uuid');
+        if (uuid) {
+          uuids.push(uuid);
+        }
+      }
+    });
+    return uuids;
   }
 
   /**
@@ -99,6 +168,15 @@ export class SelectionManager {
    */
   getSelectedIds(): Set<string> {
     return new Set(documentState.selectedIds.get());
+  }
+
+  /**
+   * Get the currently selected element UUIDs
+   * 
+   * @returns Set of selected element UUIDs
+   */
+  getSelectedUUIDs(): Set<string> {
+    return new Set(documentState.selectedUUIDs.get());
   }
 
   /**
@@ -250,7 +328,7 @@ export class SelectionManager {
     // Create effect that runs whenever selection changes
     this.disposeEffect = effect(() => {
       // Access selection signals to track dependencies
-      documentState.selectedIds.get();
+      documentState.selectedUUIDs.get();
       documentState.selectedElements.get();
       documentState.selectedNodes.get();
 

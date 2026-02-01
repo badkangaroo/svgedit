@@ -12,9 +12,10 @@ import {
   verifyPrimitiveCreated,
   getActiveTool,
   verifyToolActive,
-  getElementCount
+  getElementCount,
+  getElementCountWithUUID,
+  getLastElementUUID
 } from '../../helpers/tool-helpers';
-import { getSelectedElements } from '../../helpers/selection-helpers';
 import { waitForEditorReady, initializeNewDocument } from '../../helpers/svg-helpers';
 
 test.describe('Tool Palette', () => {
@@ -55,11 +56,11 @@ test.describe('Tool Palette', () => {
     // Verify rectangle was created
     await verifyPrimitiveCreated(page, 'rect');
     
-    // Verify count increased
+    // Verify count increased by exactly 1
     const newCount = await getElementCount(page, 'rect');
     expect(newCount).toBe(initialCount + 1);
     
-    // Verify the rectangle has expected attributes
+    // Get the UUID of the newly created rectangle
     const canvas = page.locator('svg-canvas');
     const newRect = canvas.locator('svg rect').last();
     
@@ -67,10 +68,13 @@ test.describe('Tool Palette', () => {
     await expect(newRect).toBeVisible();
     const width = await newRect.getAttribute('width');
     const height = await newRect.getAttribute('height');
+    const uuid = await newRect.getAttribute('data-uuid');
     
     // Width and height should be positive
     expect(parseFloat(width || '0')).toBeGreaterThan(0);
     expect(parseFloat(height || '0')).toBeGreaterThan(0);
+    // Verify UUID was assigned
+    expect(uuid).toBeTruthy();
   });
 
   test('should create circle with drag', async ({ page }) => {
@@ -94,9 +98,11 @@ test.describe('Tool Palette', () => {
     // Check that the circle exists and has a radius
     await expect(newCircle).toBeVisible();
     const r = await newCircle.getAttribute('r');
+    const uuid = await newCircle.getAttribute('data-uuid');
     
     // Radius should be positive
     expect(parseFloat(r || '0')).toBeGreaterThan(0);
+    expect(uuid).toBeTruthy();
   });
 
   test('should create ellipse with drag', async ({ page }) => {
@@ -230,7 +236,8 @@ test.describe('Tool Palette', () => {
         exists: true,
         hasOpacity: preview.getAttribute('opacity') === '0.5',
         hasDashArray: preview.getAttribute('stroke-dasharray') === '4 4',
-        tagName: preview.tagName.toLowerCase()
+        tagName: preview.tagName.toLowerCase(),
+        uuid: preview.getAttribute('data-uuid')
       };
     });
     
@@ -239,6 +246,7 @@ test.describe('Tool Palette', () => {
     expect(previewInfo.hasOpacity).toBe(true);
     expect(previewInfo.hasDashArray).toBe(true);
     expect(previewInfo.tagName).toBe('rect');
+    expect(previewInfo.uuid).toBeTruthy();
     
     // Complete the drag
     await page.mouse.up();
@@ -293,7 +301,7 @@ test.describe('Tool Palette', () => {
     // Verify that document state exists and has the created element
     expect(selectionState.hasState).toBe(true);
     expect(selectionState.documentHasElements).toBe(true);
-    expect(selectionState.allRectIds.length).toBeGreaterThan(0);
+    expect(selectionState.allRectIds?.length).toBeGreaterThan(0);
     
     // The key test: verify that an element is selected (auto-selection happened)
     expect(selectionState.selectedCount).toBeGreaterThan(0);

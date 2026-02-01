@@ -201,3 +201,47 @@ export async function getElementCount(page: Page, elementType: string): Promise<
   const canvas = page.locator('svg-canvas');
   return await canvas.locator(`svg ${elementType}`).count();
 }
+
+/**
+ * Get the number of elements with data-uuid attribute in the canvas
+ * This counts only elements that have been properly created with UUIDs
+ * 
+ * @param page - Playwright page object
+ * @param elementType - Type of element to count (e.g., 'rect', 'circle', 'ellipse', 'line')
+ * @returns The count of elements with data-uuid of the specified type
+ */
+export async function getElementCountWithUUID(page: Page, elementType: string): Promise<number> {
+  return await page.evaluate((type) => {
+    const canvas = document.querySelector('svg-canvas');
+    if (!canvas || !canvas.shadowRoot) return 0;
+    
+    const svg = canvas.shadowRoot.querySelector('svg.svg-content');
+    if (!svg) return 0;
+    
+    const elements = svg.querySelectorAll(`${type}[data-uuid]`);
+    return elements.length;
+  }, elementType);
+}
+
+/**
+ * Get the UUID of the last created element of a specific type
+ * 
+ * @param page - Playwright page object
+ * @param elementType - Type of element (e.g., 'rect', 'circle', 'ellipse', 'line')
+ * @returns The data-uuid of the last element, or null if not found
+ */
+export async function getLastElementUUID(page: Page, elementType: string): Promise<string | null> {
+  return await page.evaluate((type) => {
+    const canvas = document.querySelector('svg-canvas');
+    if (!canvas || !canvas.shadowRoot) return null;
+    
+    const svg = canvas.shadowRoot.querySelector('svg.svg-content');
+    if (!svg) return null;
+    
+    const elements = svg.querySelectorAll(`${type}[data-uuid]`);
+    if (elements.length === 0) return null;
+    
+    const lastElement = elements[elements.length - 1];
+    return lastElement.getAttribute('data-uuid');
+  }, elementType);
+}

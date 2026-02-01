@@ -12,6 +12,7 @@ import { selectionManager } from '../state/selection-manager';
 import { svgParser } from './svg-parser';
 import { svgSerializer } from './svg-serializer';
 import { historyManager } from '../state/history-manager';
+import { generateUUID } from './uuid';
 import type { Operation, ToolType } from '../types';
 
 /**
@@ -320,6 +321,9 @@ export class PrimitiveTools {
     // Create the element
     const element = document.createElementNS('http://www.w3.org/2000/svg', this.getElementTagName(tool));
     
+    // Add unique identifier
+    element.setAttribute('data-uuid', generateUUID());
+    
     // Set attributes based on tool type
     this.setPrimitiveAttributes(element, tool, startX, startY, currentX, currentY);
     
@@ -484,11 +488,12 @@ export class PrimitiveTools {
    * Update document state after creating a primitive
    */
   private updateDocumentState(svgElement: SVGElement, newElement: SVGElement): void {
-    const serializedSVG = svgSerializer.serialize(svgElement);
+    // Serialize with keepUUID: true to preserve the UUID for selection
+    const serializedSVG = svgSerializer.serialize(svgElement, { keepUUID: true });
     const parseResult = svgParser.parse(serializedSVG);
     
     if (parseResult.success && parseResult.document) {
-      const newElementId = newElement.getAttribute('id');
+      const newElementUUID = newElement.getAttribute('data-uuid');
       
       const operation: Operation = {
         type: 'create',
@@ -496,7 +501,8 @@ export class PrimitiveTools {
         description: `Create ${this.creationState.tool}`,
         undo: () => {
           newElement.remove();
-          const undoSerialized = svgSerializer.serialize(svgElement);
+          // Keep UUID for consistency in history too
+          const undoSerialized = svgSerializer.serialize(svgElement, { keepUUID: true });
           const undoParseResult = svgParser.parse(undoSerialized);
           
           if (undoParseResult.success && undoParseResult.document) {
@@ -509,7 +515,7 @@ export class PrimitiveTools {
         },
         redo: () => {
           svgElement.appendChild(newElement);
-          const redoSerialized = svgSerializer.serialize(svgElement);
+          const redoSerialized = svgSerializer.serialize(svgElement, { keepUUID: true });
           const redoParseResult = svgParser.parse(redoSerialized);
           
           if (redoParseResult.success && redoParseResult.document) {
@@ -530,17 +536,10 @@ export class PrimitiveTools {
         serializedSVG
       );
       
-      // Auto-select the newly created element (Requirement 6.5)
-      if (newElementId) {
-        const parsedElement = parseResult.document.querySelector(`[data-original-id="${newElementId}"]`) ||
-                             parseResult.document.querySelector(`#${newElementId}`);
-        
-        if (parsedElement) {
-          const finalId = parsedElement.getAttribute('id');
-          if (finalId) {
-            selectionManager.select([finalId]);
-          }
-        }
+      // Auto-select the newly created element (Requirement 6.5) using UUID
+      if (newElementUUID) {
+        // Use selectByUUIDs as requested
+        selectionManager.selectByUUIDs([newElementUUID]);
       }
     }
   }
