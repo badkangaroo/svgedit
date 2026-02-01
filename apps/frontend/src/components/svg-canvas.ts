@@ -794,6 +794,10 @@ export class SVGCanvas extends HTMLElement {
     // Create the final element
     const element = createPrimitiveElement(tool, startX, startY, endX, endY);
     
+    // Assign a temporary ID so we can find it after parsing
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    element.setAttribute('id', tempId);
+    
     // Add to SVG
     svgElement.appendChild(element);
     
@@ -846,16 +850,18 @@ export class SVGCanvas extends HTMLElement {
       );
       
       // Auto-select the newly created element (Requirement 6.5)
-      const newElementId = element.getAttribute('id');
-      if (newElementId) {
-        const parsedElement = parseResult.document.querySelector(`[data-original-id="${newElementId}"]`) ||
-                             parseResult.document.querySelector(`#${newElementId}`);
+      // Find the element by its temporary ID (stored as data-original-id after parsing)
+      const parsedElement = parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
+                           parseResult.document.querySelector(`#${tempId}`);
+      
+      if (parsedElement) {
+        const finalId = parsedElement.getAttribute('id');
         
-        if (parsedElement) {
-          const finalId = parsedElement.getAttribute('id');
-          if (finalId) {
+        if (finalId) {
+          // Delay selection to allow document state to propagate
+          setTimeout(() => {
             selectionManager.select([finalId]);
-          }
+          }, 0);
         }
       }
     }
