@@ -174,39 +174,95 @@ test.describe('Tool Palette', () => {
       throw new Error('Canvas not found');
     }
     
+    // Get initial element count
+    const initialCount = await getElementCount(page, 'rect');
+    
     // Start dragging
     const startX = canvasBox.x + 100;
     const startY = canvasBox.y + 100;
     await page.mouse.move(startX, startY);
     await page.mouse.down();
     
-    // Move mouse to create preview
-    await page.mouse.move(startX + 100, startY + 100, { steps: 5 });
+    // Move mouse to create preview - need significant movement
+    await page.mouse.move(startX + 150, startY + 150, { steps: 10 });
     
     // Wait a moment for preview to appear
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
     
-    // Check for preview element
-    // Preview might be indicated by a class, opacity, or stroke-dasharray
-    const previewExists = await page.evaluate(() => {
+    // Debug: Check what's in the SVG
+    const debugInfo = await page.evaluate(() => {
       const canvas = document.querySelector('svg-canvas');
-      if (!canvas || !canvas.shadowRoot) return false;
+      if (!canvas || !canvas.shadowRoot) return { error: 'No canvas or shadowRoot' };
       
-      const svg = canvas.shadowRoot.querySelector('svg');
-      if (!svg) return false;
+      const svg = canvas.shadowRoot.querySelector('svg.svg-content');
+      if (!svg) return { error: 'No svg.svg-content' };
       
-      // Look for elements with preview indicators
-      const previewElements = svg.querySelectorAll('[class*="preview"], [opacity="0.5"], [stroke-dasharray]');
-      return previewElements.length > 0;
+      const allRects = svg.querySelectorAll('rect');
+      const rectsInfo = Array.from(allRects).map(r => ({
+        opacity: r.getAttribute('opacity'),
+        strokeDasharray: r.getAttribute('stroke-dasharray'),
+        id: r.getAttribute('id'),
+        x: r.getAttribute('x'),
+        y: r.getAttribute('y')
+      }));
+      
+      return { rectCount: allRects.length, rects: rectsInfo };
     });
+    
+    // Check for preview element with specific attributes
+    // Preview should have opacity="0.5" and stroke-dasharray="4 4"
+    const previewInfo = await page.evaluate(() => {
+      const canvas = document.querySelector('svg-canvas');
+      if (!canvas || !canvas.shadowRoot) return { exists: false, hasOpacity: false, hasDashArray: false };
+      
+      const svg = canvas.shadowRoot.querySelector('svg.svg-content');
+      if (!svg) return { exists: false, hasOpacity: false, hasDashArray: false };
+      
+      // Look for elements with preview indicators (opacity="0.5" and stroke-dasharray)
+      const previewElements = svg.querySelectorAll('[opacity="0.5"][stroke-dasharray]');
+      
+      if (previewElements.length === 0) {
+        return { exists: false, hasOpacity: false, hasDashArray: false };
+      }
+      
+      const preview = previewElements[0];
+      return {
+        exists: true,
+        hasOpacity: preview.getAttribute('opacity') === '0.5',
+        hasDashArray: preview.getAttribute('stroke-dasharray') === '4 4',
+        tagName: preview.tagName.toLowerCase()
+      };
+    });
+    
+    // Verify preview exists with correct attributes
+    expect(previewInfo.exists, `Preview not found. Debug info: ${JSON.stringify(debugInfo)}`).toBe(true);
+    expect(previewInfo.hasOpacity).toBe(true);
+    expect(previewInfo.hasDashArray).toBe(true);
+    expect(previewInfo.tagName).toBe('rect');
     
     // Complete the drag
     await page.mouse.up();
     
-    // Preview should exist during drag (we checked above)
-    // Note: This test is best-effort since preview timing can be tricky
-    // The main goal is to verify the preview mechanism exists
-    expect(previewExists || true).toBe(true); // Always pass if we got here without errors
+    // Wait for element to be finalized
+    await page.waitForTimeout(200);
+    
+    // Verify preview is removed and permanent element is created
+    const previewAfterDrag = await page.evaluate(() => {
+      const canvas = document.querySelector('svg-canvas');
+      if (!canvas || !canvas.shadowRoot) return true;
+      
+      const svg = canvas.shadowRoot.querySelector('svg.svg-content');
+      if (!svg) return true;
+      
+      const previewElements = svg.querySelectorAll('[opacity="0.5"][stroke-dasharray]');
+      return previewElements.length > 0;
+    });
+    
+    expect(previewAfterDrag).toBe(false); // Preview should be removed
+    
+    // Verify permanent element was created
+    const finalCount = await getElementCount(page, 'rect');
+    expect(finalCount).toBe(initialCount + 1);
   });
 
   test('should auto-select newly created element', async ({ page }) => {

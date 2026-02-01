@@ -56,11 +56,11 @@
 ### 4. Tool Palette Tests
 - [x] 4.1 Create `tests/e2e/playwright/tool-palette.spec.ts`
   - [x] 4.1.1 Write test: "should activate tool on click"
-  - [ ] 4.1.2 Write test: "should create rectangle with drag"
-  - [ ] 4.1.3 Write test: "should create circle with drag"
-  - [ ] 4.1.4 Write test: "should create ellipse with drag"
-  - [ ] 4.1.5 Write test: "should create line with drag"
-  - [ ] 4.1.6 Write test: "should show preview during drag"
+  - [x] 4.1.2 Write test: "should create rectangle with drag"
+  - [x] 4.1.3 Write test: "should create circle with drag"
+  - [x] 4.1.4 Write test: "should create ellipse with drag"
+  - [x] 4.1.5 Write test: "should create line with drag"
+  - [x] 4.1.6 Write test: "should show preview during drag"
   - [ ] 4.1.7 Write test: "should auto-select newly created element"
   - [ ] 4.1.8 Write test: "should update hierarchy panel after creation"
   - [ ] 4.1.9 Run tests across all browsers
