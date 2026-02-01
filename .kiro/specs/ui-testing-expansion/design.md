@@ -34,6 +34,17 @@ apps/frontend/tests/helpers/
 
 ## Component Interaction Map
 
+### Element Identification
+Tests should prioritize using `data-uuid` for selecting elements to ensure stability and avoid selecting UI overlays (like selection handles).
+
+```typescript
+// Good: Select by stable UUID
+const element = canvas.locator(`svg [data-uuid="${uuid}"]`);
+
+// Bad: Select by tag name (might match overlays)
+const element = canvas.locator('svg rect').first();
+```
+
 ### Shadow DOM Navigation Strategy
 
 The SVG editor uses Web Components with Shadow DOM. Tests must pierce shadow boundaries:
@@ -609,11 +620,12 @@ test.describe('Accessibility', () => {
 import { Page, Locator } from '@playwright/test';
 
 /**
- * Select an element by ID in the canvas
+ * Select an element by ID or UUID in the canvas
  */
-export async function selectElement(page: Page, elementId: string): Promise<void> {
+export async function selectElement(page: Page, identifier: string): Promise<void> {
   const canvas = page.locator('svg-canvas');
-  const element = canvas.locator(`svg [id="${elementId}"]`);
+  // Try ID then UUID
+  const element = canvas.locator(`svg [id="${identifier}"], svg [data-uuid="${identifier}"]`).first();
   await element.click();
 }
 
@@ -791,15 +803,15 @@ import { Page } from '@playwright/test';
  */
 export async function dragElement(
   page: Page,
-  elementId: string,
+  identifier: string,
   deltaX: number,
   deltaY: number
 ): Promise<void> {
   const canvas = page.locator('svg-canvas');
-  const element = canvas.locator(`svg [id="${elementId}"]`);
+  const element = canvas.locator(`svg [id="${identifier}"], svg [data-uuid="${identifier}"]`).first();
   
   const box = await element.boundingBox();
-  if (!box) throw new Error(`Element ${elementId} not found`);
+  if (!box) throw new Error(`Element ${identifier} not found`);
   
   const startX = box.x + box.width / 2;
   const startY = box.y + box.height / 2;
@@ -815,10 +827,10 @@ export async function dragElement(
  */
 export async function getElementPosition(
   page: Page,
-  elementId: string
+  identifier: string
 ): Promise<{ x: number; y: number }> {
   const canvas = page.locator('svg-canvas');
-  const element = canvas.locator(`svg [id="${elementId}"]`);
+  const element = canvas.locator(`svg [id="${identifier}"], svg [data-uuid="${identifier}"]`).first();
   
   const tagName = await element.evaluate(el => el.tagName.toLowerCase());
   

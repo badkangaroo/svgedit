@@ -27,9 +27,9 @@ export async function dragElement(
 ): Promise<void> {
   const canvas = page.locator('svg-canvas');
   
-  // Try to find element by ID or data-original-id
+  // Try to find element by ID, data-original-id, or data-uuid in the content SVG
   const element = canvas.locator(
-    `svg [id="${elementId}"], svg [data-original-id="${elementId}"]`
+    `svg.svg-content [id="${elementId}"], svg.svg-content [data-original-id="${elementId}"], svg.svg-content [data-uuid="${elementId}"]`
   ).first();
   
   // Get the element's bounding box
@@ -49,6 +49,9 @@ export async function dragElement(
   // Perform the drag operation
   await page.mouse.move(startX, startY);
   await page.mouse.down();
+  
+  // Wait a bit for selection/drag initialization
+  await page.waitForTimeout(50);
   
   // Move with steps for smoother drag simulation
   await page.mouse.move(endX, endY, { steps: 10 });
@@ -81,10 +84,13 @@ export async function getElementPosition(
       throw new Error('Document not found');
     }
     
-    // Try to find by ID or data-original-id
+    // Try to find by ID, data-original-id, or data-uuid
     let element = doc.getElementById(id);
     if (!element) {
       element = doc.querySelector(`[data-original-id="${id}"]`);
+    }
+    if (!element) {
+      element = doc.querySelector(`[data-uuid="${id}"]`);
     }
     
     if (!element) {

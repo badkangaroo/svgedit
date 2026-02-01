@@ -108,6 +108,16 @@ Expand the Playwright UI test suite to cover SVG editing functions including ele
 - 10.3 Test should verify focus indicators are visible
 - 10.4 Test should verify screen reader announcements for state changes
 
+### 11. Element Identification Strategy
+**As a developer**, I want a reliable way to identify and interact with SVG elements in tests so that I can write stable and deterministic tests.
+
+**Acceptance Criteria:**
+- 11.1 Test helpers must use `data-uuid` for finding elements whenever possible
+- 11.2 `data-uuid` must be preserved during SVG serialization and state updates
+- 11.3 Newly created elements (via tools or raw edit) must have a `data-uuid` assigned
+- 11.4 Helper functions like `getElementPosition` and `dragElement` must support `data-uuid` lookup
+- 11.5 `getElementCount` helpers must differentiate between content elements (with `data-uuid`) and UI overlays (handles, selection boxes)
+
 ## Non-Functional Requirements
 
 ### Performance

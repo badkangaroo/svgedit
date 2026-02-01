@@ -516,6 +516,8 @@ export class SVGCanvas extends HTMLElement {
     this.isMouseDown = true;
     this.mouseDownTarget = mouseEvent.target;
 
+    // console.log('MouseDown target:', mouseEvent.target);
+
     // Get the active tool
     const activeTool = toolPaletteState.activeTool.get();
     
@@ -670,6 +672,7 @@ export class SVGCanvas extends HTMLElement {
    * @returns The SVG element or null if not found
    */
   private findSVGElement(target: HTMLElement): SVGElement | null {
+    // console.log('findSVGElement checking:', target);
     // Handle null or undefined target
     if (!target) {
       return null;
