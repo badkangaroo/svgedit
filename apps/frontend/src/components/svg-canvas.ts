@@ -802,7 +802,7 @@ export class SVGCanvas extends HTMLElement {
     svgElement.appendChild(element);
     
     // Update document state
-    const serializedSVG = svgSerializer.serialize(svgElement);
+    const serializedSVG = svgSerializer.serialize(svgElement, { keepUUID: true });
     const parseResult = svgParser.parse(serializedSVG);
     
     if (parseResult.success && parseResult.document) {

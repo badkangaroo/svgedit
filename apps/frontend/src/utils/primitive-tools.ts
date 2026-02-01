@@ -231,6 +231,7 @@ export class PrimitiveTools {
     // Add preview styling
     element.setAttribute('opacity', '0.5');
     element.setAttribute('stroke-dasharray', '4 4');
+    element.setAttribute('data-uuid', generateUUID());
     
     return element;
   }

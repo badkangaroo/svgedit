@@ -145,14 +145,14 @@ export async function verifyPrimitiveCreated(
 ): Promise<void> {
   const canvas = page.locator('svg-canvas');
   
-  // Find the last element of the specified type (most recently created)
-  const element = canvas.locator(`svg ${elementType}`).last();
+  // Find the last element of the specified type (most recently created) in the content SVG
+  const element = canvas.locator(`svg.svg-content ${elementType}`).last();
   
   // Verify the element exists and is visible
   await expect(element).toBeVisible({ timeout: 5000 });
   
   // Verify the element has been added to the document
-  const elementCount = await canvas.locator(`svg ${elementType}`).count();
+  const elementCount = await canvas.locator(`svg.svg-content ${elementType}`).count();
   expect(elementCount).toBeGreaterThan(0);
 }
 
@@ -199,7 +199,7 @@ export async function verifyToolActive(page: Page, toolName: string): Promise<vo
  */
 export async function getElementCount(page: Page, elementType: string): Promise<number> {
   const canvas = page.locator('svg-canvas');
-  return await canvas.locator(`svg ${elementType}`).count();
+  return await canvas.locator(`svg.svg-content ${elementType}`).count();
 }
 
 /**

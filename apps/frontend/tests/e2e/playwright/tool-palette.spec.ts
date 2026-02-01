@@ -48,7 +48,7 @@ test.describe('Tool Palette', () => {
 
   test('should create rectangle with drag', async ({ page }) => {
     // Get initial rectangle count
-    const initialCount = await getElementCount(page, 'rect');
+    const initialCount = await getElementCountWithUUID(page, 'rect');
     
     // Draw a rectangle
     await drawPrimitive(page, 'rectangle', 100, 100, 200, 200);
@@ -57,7 +57,7 @@ test.describe('Tool Palette', () => {
     await verifyPrimitiveCreated(page, 'rect');
     
     // Verify count increased by exactly 1
-    const newCount = await getElementCount(page, 'rect');
+    const newCount = await getElementCountWithUUID(page, 'rect');
     expect(newCount).toBe(initialCount + 1);
     
     // Get the UUID of the newly created rectangle
@@ -79,7 +79,7 @@ test.describe('Tool Palette', () => {
 
   test('should create circle with drag', async ({ page }) => {
     // Get initial circle count
-    const initialCount = await getElementCount(page, 'circle');
+    const initialCount = await getElementCountWithUUID(page, 'circle');
     
     // Draw a circle
     await drawPrimitive(page, 'circle', 150, 150, 250, 250);
@@ -88,7 +88,7 @@ test.describe('Tool Palette', () => {
     await verifyPrimitiveCreated(page, 'circle');
     
     // Verify count increased
-    const newCount = await getElementCount(page, 'circle');
+    const newCount = await getElementCountWithUUID(page, 'circle');
     expect(newCount).toBe(initialCount + 1);
     
     // Verify the circle has expected attributes
@@ -107,7 +107,7 @@ test.describe('Tool Palette', () => {
 
   test('should create ellipse with drag', async ({ page }) => {
     // Get initial ellipse count
-    const initialCount = await getElementCount(page, 'ellipse');
+    const initialCount = await getElementCountWithUUID(page, 'ellipse');
     
     // Draw an ellipse
     await drawPrimitive(page, 'ellipse', 100, 150, 250, 200);
@@ -116,7 +116,7 @@ test.describe('Tool Palette', () => {
     await verifyPrimitiveCreated(page, 'ellipse');
     
     // Verify count increased
-    const newCount = await getElementCount(page, 'ellipse');
+    const newCount = await getElementCountWithUUID(page, 'ellipse');
     expect(newCount).toBe(initialCount + 1);
     
     // Verify the ellipse has expected attributes
@@ -135,7 +135,7 @@ test.describe('Tool Palette', () => {
 
   test('should create line with drag', async ({ page }) => {
     // Get initial line count
-    const initialCount = await getElementCount(page, 'line');
+    const initialCount = await getElementCountWithUUID(page, 'line');
     
     // Draw a line
     await drawPrimitive(page, 'line', 100, 100, 300, 200);
@@ -144,7 +144,7 @@ test.describe('Tool Palette', () => {
     await verifyPrimitiveCreated(page, 'line');
     
     // Verify count increased
-    const newCount = await getElementCount(page, 'line');
+    const newCount = await getElementCountWithUUID(page, 'line');
     expect(newCount).toBe(initialCount + 1);
     
     // Verify the line has expected attributes
@@ -181,7 +181,7 @@ test.describe('Tool Palette', () => {
     }
     
     // Get initial element count
-    const initialCount = await getElementCount(page, 'rect');
+    const initialCount = await getElementCountWithUUID(page, 'rect');
     
     // Start dragging
     const startX = canvasBox.x + 100;
@@ -269,7 +269,7 @@ test.describe('Tool Palette', () => {
     expect(previewAfterDrag).toBe(false); // Preview should be removed
     
     // Verify permanent element was created
-    const finalCount = await getElementCount(page, 'rect');
+    const finalCount = await getElementCountWithUUID(page, 'rect');
     expect(finalCount).toBe(initialCount + 1);
   });
 
