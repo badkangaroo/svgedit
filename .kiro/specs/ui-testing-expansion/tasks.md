@@ -76,13 +76,13 @@
   - [x] 5.1.3 Implement `verifyElementMoved(page, elementId, expectedX, expectedY)` function
   - [x] 5.1.4 Add unit tests for helper functions
 
-- [ ] 5.2 Create `tests/e2e/playwright/drag-operations.spec.ts`
-  - [ ] 5.2.1 Write test: "should move element by dragging"
-  - [ ] 5.2.2 Write test: "should update position in attribute inspector during drag"
-  - [ ] 5.2.3 Write test: "should drag multiple selected elements together"
-  - [ ] 5.2.4 Write test: "should show dragging visual feedback"
-  - [ ] 5.2.5 Write test: "should update selection outline during drag"
-  - [ ] 5.2.6 Run tests across all browsers
+- [x] 5.2 Create `tests/e2e/playwright/drag-operations.spec.ts`
+  - [x] 5.2.1 Write test: "should move element by dragging"
+  - [x] 5.2.2 Write test: "should update position in attribute inspector during drag"
+  - [x] 5.2.3 Write test: "should drag multiple selected elements together"
+  - [x] 5.2.4 Write test: "should show dragging visual feedback"
+  - [x] 5.2.5 Write test: "should update selection outline during drag"
+  - [x] 5.2.6 Run tests across all browsers
 
 ### 6. Keyboard Shortcuts Tests
 - [ ] 6.1 Create `tests/e2e/playwright/keyboard-shortcuts.spec.ts`
