@@ -70,11 +70,11 @@
 ## Phase 2: Advanced Interactions (Priority: High)
 
 ### 5. Drag Operations Tests
-- [ ] 5.1 Create `tests/helpers/drag-helpers.ts`
-  - [ ] 5.1.1 Implement `dragElement(page, elementId, deltaX, deltaY)` function
-  - [ ] 5.1.2 Implement `getElementPosition(page, elementId)` function
-  - [ ] 5.1.3 Implement `verifyElementMoved(page, elementId, expectedX, expectedY)` function
-  - [ ] 5.1.4 Add unit tests for helper functions
+- [x] 5.1 Create `tests/helpers/drag-helpers.ts`
+  - [x] 5.1.1 Implement `dragElement(page, elementId, deltaX, deltaY)` function
+  - [x] 5.1.2 Implement `getElementPosition(page, elementId)` function
+  - [x] 5.1.3 Implement `verifyElementMoved(page, elementId, expectedX, expectedY)` function
+  - [x] 5.1.4 Add unit tests for helper functions
 
 - [ ] 5.2 Create `tests/e2e/playwright/drag-operations.spec.ts`
   - [ ] 5.2.1 Write test: "should move element by dragging"
