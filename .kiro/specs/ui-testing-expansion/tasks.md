@@ -62,8 +62,8 @@
   - [x] 4.1.5 Write test: "should create line with drag"
   - [x] 4.1.6 Write test: "should show preview during drag"
   - [x] 4.1.7 Write test: "should auto-select newly created element"
-  - [ ] 4.1.8 Write test: "should update hierarchy panel after creation"
-  - [ ] 4.1.9 Run tests across all browsers
+  - [x] 4.1.8 Write test: "should update hierarchy panel after creation"
+  - [x] 4.1.9 Run tests across all browsers
 
 
 
