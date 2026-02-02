@@ -234,6 +234,8 @@ test.describe('Raw SVG Panel', () => {
   test('should rebuild Element Registry after successful parse', async ({ page }) => {
     const app = page.locator('svg-editor-app');
     const rawPanel = app.locator('svg-raw-panel');
+    const canvas = app.locator('svg-canvas');
+    const hierarchy = app.locator('svg-hierarchy-panel');
     
     // Get the textarea
     const textarea = rawPanel.locator('textarea.text-editor');
@@ -246,33 +248,27 @@ test.describe('Raw SVG Panel', () => {
     // Update the textarea
     await textarea.fill(content);
     
-    // Wait for parsing
+    // Wait for parsing and registry rebuild
     await page.waitForTimeout(500);
     
-    // Wait a bit more for Element Registry to rebuild
+    // Verify the element appears in canvas (check both id and data-original-id)
+    const lineElement = canvas.locator('svg [id="new-line"], svg [data-original-id="new-line"]').first();
+    await expect(lineElement).toBeVisible();
+    
+    // Verify the element appears in hierarchy (Element Registry must be working)
+    const hierarchyNode = hierarchy.getByText('new-line', { exact: false });
+    await expect(hierarchyNode).toBeVisible();
+    
+    // Verify we can select the element by clicking it in the hierarchy
+    // This proves the Element Registry has been rebuilt and can map the element
+    await hierarchyNode.click();
+    
+    // Wait for selection to propagate
     await page.waitForTimeout(200);
     
-    // Verify Element Registry can find the new element
-    const canSelect = await page.evaluate(() => {
-      const { selectionManager, elementRegistry } = (window as any);
-      if (!selectionManager || !elementRegistry) return false;
-      
-      try {
-        // Check if element is in registry (by id or data-original-id)
-        const element = elementRegistry.getElementById('new-line');
-        if (!element) return false;
-        
-        // Try to select it
-        selectionManager.select(['new-line']);
-        const selectedIds = (window as any).documentState.selectedIds.get();
-        return selectedIds.has('new-line');
-      } catch (error) {
-        console.error('Selection error:', error);
-        return false;
-      }
-    });
-    
-    expect(canSelect).toBe(true);
+    // Verify selection outline appears in canvas
+    const selectionOutline = canvas.locator('.selection-outline');
+    await expect(selectionOutline).toBeVisible();
   });
 
   test('should show rollback button when parse error occurs', async ({ page }) => {
