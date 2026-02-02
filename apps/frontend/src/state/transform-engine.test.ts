@@ -599,18 +599,19 @@ describe('TransformEngine', () => {
       // Element should be deleted
       expect(documentState.svgDocument.get()?.querySelector('[id="rect1"]')).toBeNull();
       
-      // Undo the deletion
+      // Undo the deletion (restores via setDocument)
       operation.undo();
-      
-      // Element should be restored
-      const restoredRect = mockDocument.querySelector('[id="rect1"]') as SVGRectElement;
+
+      // Element should be restored (parser uses svg-node-X ids, stores original in data-original-id)
+      const doc = documentState.svgDocument.get();
+      const restoredRect = doc?.querySelector('[id="rect1"], [data-original-id="rect1"]') as SVGRectElement | null;
       expect(restoredRect).not.toBeNull();
-      expect(restoredRect.getAttribute('x')).toBe('10');
-      expect(restoredRect.getAttribute('y')).toBe('20');
-      expect(restoredRect.getAttribute('width')).toBe('100');
-      expect(restoredRect.getAttribute('height')).toBe('50');
+      expect(restoredRect?.getAttribute('x')).toBe('10');
+      expect(restoredRect?.getAttribute('y')).toBe('20');
+      expect(restoredRect?.getAttribute('width')).toBe('100');
+      expect(restoredRect?.getAttribute('height')).toBe('50');
     });
-    
+
     it('should support redo for single element deletion', () => {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('id', 'rect1');
@@ -618,15 +619,15 @@ describe('TransformEngine', () => {
       
       const operation = engine.delete(['rect1']);
       operation.undo();
-      
-      // Element should be restored
-      expect(mockDocument.querySelector('[id="rect1"]')).not.toBeNull();
-      
+
+      // Element should be restored (parser uses data-original-id for original ids)
+      expect(documentState.svgDocument.get()?.querySelector('[id="rect1"], [data-original-id="rect1"]')).not.toBeNull();
+
       // Redo the deletion
       operation.redo();
-      
+
       // Element should be deleted again
-      expect(mockDocument.querySelector('[id="rect1"]')).toBeNull();
+      expect(documentState.svgDocument.get()?.querySelector('[id="rect1"]')).toBeNull();
     });
     
     it('should support undo for multiple element deletion', () => {
@@ -644,18 +645,19 @@ describe('TransformEngine', () => {
       
       const operation = engine.delete(['rect1', 'circle1']);
       operation.undo();
-      
-      // Both elements should be restored
-      const restoredRect = mockDocument.querySelector('[id="rect1"]') as SVGRectElement;
-      const restoredCircle = mockDocument.querySelector('[id="circle1"]') as SVGCircleElement;
-      
+
+      // Both elements should be restored (parser uses data-original-id)
+      const doc = documentState.svgDocument.get();
+      const restoredRect = doc?.querySelector('[id="rect1"], [data-original-id="rect1"]') as SVGRectElement | null;
+      const restoredCircle = doc?.querySelector('[id="circle1"], [data-original-id="circle1"]') as SVGCircleElement | null;
+
       expect(restoredRect).not.toBeNull();
-      expect(restoredRect.getAttribute('x')).toBe('10');
-      expect(restoredRect.getAttribute('y')).toBe('20');
-      
+      expect(restoredRect?.getAttribute('x')).toBe('10');
+      expect(restoredRect?.getAttribute('y')).toBe('20');
+
       expect(restoredCircle).not.toBeNull();
-      expect(restoredCircle.getAttribute('cx')).toBe('50');
-      expect(restoredCircle.getAttribute('cy')).toBe('60');
+      expect(restoredCircle?.getAttribute('cx')).toBe('50');
+      expect(restoredCircle?.getAttribute('cy')).toBe('60');
     });
     
     it('should restore element at correct position in DOM', () => {
@@ -677,12 +679,15 @@ describe('TransformEngine', () => {
       
       // Undo deletion
       operation.undo();
-      
-      // Check that element is restored in correct position
-      const children = Array.from(mockDocument.children);
-      expect(children[0].getAttribute('id')).toBe('rect1');
-      expect(children[1].getAttribute('id')).toBe('rect2');
-      expect(children[2].getAttribute('id')).toBe('rect3');
+
+      // Check that element is restored in correct position (parser uses svg-node-X + data-original-id)
+      const doc = documentState.svgDocument.get();
+      const children = Array.from(doc?.children ?? []);
+      const ids = children.map((c) => c.getAttribute('data-original-id') ?? c.getAttribute('id'));
+      expect(ids).toContain('rect1');
+      expect(ids).toContain('rect2');
+      expect(ids).toContain('rect3');
+      expect(children.length).toBe(3);
     });
     
     it('should restore element as last child if it was last', () => {
@@ -699,11 +704,13 @@ describe('TransformEngine', () => {
       
       // Undo deletion
       operation.undo();
-      
+
       // Check that element is restored as last child
-      const children = Array.from(mockDocument.children);
+      const doc = documentState.svgDocument.get();
+      const children = Array.from(doc?.children ?? []);
       expect(children.length).toBe(2);
-      expect(children[1].getAttribute('id')).toBe('rect2');
+      const lastId = children[1].getAttribute('data-original-id') ?? children[1].getAttribute('id');
+      expect(lastId).toBe('rect2');
     });
     
     it('should preserve all attributes on undo', () => {
@@ -722,17 +729,19 @@ describe('TransformEngine', () => {
       
       const operation = engine.delete(['rect1']);
       operation.undo();
-      
-      const restoredRect = mockDocument.querySelector('[id="rect1"]') as SVGRectElement;
-      expect(restoredRect.getAttribute('x')).toBe('10');
-      expect(restoredRect.getAttribute('y')).toBe('20');
-      expect(restoredRect.getAttribute('width')).toBe('100');
-      expect(restoredRect.getAttribute('height')).toBe('50');
-      expect(restoredRect.getAttribute('fill')).toBe('red');
-      expect(restoredRect.getAttribute('stroke')).toBe('blue');
-      expect(restoredRect.getAttribute('stroke-width')).toBe('2');
-      expect(restoredRect.getAttribute('opacity')).toBe('0.5');
-      expect(restoredRect.getAttribute('transform')).toBe('rotate(45)');
+
+      const doc = documentState.svgDocument.get();
+      const restoredRect = doc?.querySelector('[id="rect1"], [data-original-id="rect1"]') as SVGRectElement | null;
+      expect(restoredRect).not.toBeNull();
+      expect(restoredRect!.getAttribute('x')).toBe('10');
+      expect(restoredRect!.getAttribute('y')).toBe('20');
+      expect(restoredRect!.getAttribute('width')).toBe('100');
+      expect(restoredRect!.getAttribute('height')).toBe('50');
+      expect(restoredRect!.getAttribute('fill')).toBe('red');
+      expect(restoredRect!.getAttribute('stroke')).toBe('blue');
+      expect(restoredRect!.getAttribute('stroke-width')).toBe('2');
+      expect(restoredRect!.getAttribute('opacity')).toBe('0.5');
+      expect(restoredRect!.getAttribute('transform')).toBe('rotate(45)');
     });
     
     it('should preserve child elements on undo', () => {
@@ -751,12 +760,15 @@ describe('TransformEngine', () => {
       
       const operation = engine.delete(['group1']);
       operation.undo();
-      
-      const restoredGroup = mockDocument.querySelector('[id="group1"]') as SVGGElement;
+
+      const restoredGroup = documentState.svgDocument.get()?.querySelector('[id="group1"], [data-original-id="group1"]') as SVGGElement | null;
       expect(restoredGroup).not.toBeNull();
-      expect(restoredGroup.children.length).toBe(2);
-      expect(restoredGroup.children[0].getAttribute('id')).toBe('rect1');
-      expect(restoredGroup.children[1].getAttribute('id')).toBe('circle1');
+      expect(restoredGroup?.children.length).toBe(2);
+      const childIds = Array.from(restoredGroup?.children ?? []).map(
+        (c) => c.getAttribute('data-original-id') ?? c.getAttribute('id')
+      );
+      expect(childIds).toContain('rect1');
+      expect(childIds).toContain('circle1');
     });
   });
   
@@ -785,21 +797,21 @@ describe('TransformEngine', () => {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('id', 'rect1');
       mockDocument.appendChild(rect);
-      
+
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      
+
       const operation = engine.delete(['rect1', 'nonexistent']);
-      
+
       // Should delete the valid element
-      expect(mockDocument.querySelector('[id="rect1"]')).toBeNull();
-      
+      expect(documentState.svgDocument.get()?.querySelector('[id="rect1"]')).toBeNull();
+
       // Should warn about the nonexistent element
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Element with id "nonexistent" not found');
-      
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Element "nonexistent" not found');
+
       consoleWarnSpy.mockRestore();
     });
   });
-  
+
   describe('delete() - edge cases', () => {
     it('should handle deleting nested elements', () => {
       const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -812,11 +824,11 @@ describe('TransformEngine', () => {
       
       // Delete the nested rect
       engine.delete(['rect1']);
-      
-      // Group should still exist
-      expect(mockDocument.querySelector('[id="group1"]')).not.toBeNull();
-      // Rect should be deleted
-      expect(mockDocument.querySelector('[id="rect1"]')).toBeNull();
+
+      // Group should still exist, rect should be deleted
+      const doc = documentState.svgDocument.get();
+      expect(doc?.querySelector('[id="group1"], [data-original-id="group1"]')).not.toBeNull();
+      expect(doc?.querySelector('[id="rect1"], [data-original-id="rect1"]')).toBeNull();
     });
     
     it('should handle deleting parent and child separately', () => {
@@ -830,10 +842,11 @@ describe('TransformEngine', () => {
       
       // Delete both parent and child
       engine.delete(['group1', 'rect1']);
-      
+
       // Both should be deleted
-      expect(mockDocument.querySelector('[id="group1"]')).toBeNull();
-      expect(mockDocument.querySelector('[id="rect1"]')).toBeNull();
+      const doc = documentState.svgDocument.get();
+      expect(doc?.querySelector('[id="group1"], [data-original-id="group1"]')).toBeNull();
+      expect(doc?.querySelector('[id="rect1"], [data-original-id="rect1"]')).toBeNull();
     });
     
     it('should include timestamp in delete operation', () => {

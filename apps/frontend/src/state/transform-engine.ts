@@ -517,7 +517,11 @@ export class TransformEngine {
     const elementsToRemove: SVGElement[] = [];
     for (const id of elementIds) {
       const element = this.resolveElement(id);
-      if (element) elementsToRemove.push(element);
+      if (element) {
+        elementsToRemove.push(element);
+      } else {
+        console.warn(`Element "${id}" not found`);
+      }
     }
     if (elementsToRemove.length === 0) {
       throw new Error('No valid elements found for delete operation');

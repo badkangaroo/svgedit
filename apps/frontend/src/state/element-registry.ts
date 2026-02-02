@@ -87,9 +87,28 @@ export class ElementRegistry {
         this.idToUuid,
         this.elementToUuid
       );
+    } else if (doc) {
+      // Fallback: build from document when tree is empty (e.g. unit tests)
+      this.buildMapsFromDocument(doc);
     }
 
     this.structureVersion.set(this.structureVersion.peek() + 1);
+  }
+
+  /**
+   * Build index maps by traversing the document DOM (used when tree is empty).
+   */
+  private buildMapsFromDocument(doc: SVGElement): void {
+    const elements = doc.querySelectorAll('[data-uuid]');
+    elements.forEach((el) => {
+      const uuid = el.getAttribute('data-uuid');
+      const id = el.getAttribute('id');
+      if (uuid) {
+        this.uuidToElement.set(uuid, el as SVGElement);
+        this.elementToUuid.set(el as SVGElement, uuid);
+        if (id) this.idToUuid.set(id, uuid);
+      }
+    });
   }
 
   /**
@@ -114,7 +133,8 @@ export class ElementRegistry {
     if (node) {
       return node.attributes.get('id') ?? node.id ?? null;
     }
-    return null;
+    const element = this.uuidToElement.get(uuid);
+    return element?.getAttribute('id') ?? null;
   }
 
   /**
