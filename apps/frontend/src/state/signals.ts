@@ -227,18 +227,12 @@ export class Effect {
   private effectFn: EffectFn;
   private cleanup: (() => void) | void = undefined;
   private isRunning = false;
+  private scheduled = false;
 
   constructor(effectFn: EffectFn) {
     this.effectFn = effectFn;
-    
-    // Bind execute to this instance
-    this.execute = () => {
-      if (this.isRunning) {
-        // Prevent infinite loops
-        console.warn('Effect is already running, skipping execution');
-        return;
-      }
 
+    const runEffect = () => {
       // Run cleanup from previous execution
       if (this.cleanup) {
         this.cleanup();
@@ -265,9 +259,28 @@ export class Effect {
         this.cleanup = this.effectFn();
       } finally {
         this.isRunning = false;
+        this.scheduled = false;
         effectStack.pop();
         currentEffect = prevEffect;
       }
+    };
+
+    // Bind execute to this instance
+    this.execute = () => {
+      if (this.isRunning) {
+        // Queue to run after current execution so we don't lose the update
+        if (!this.scheduled) {
+          this.scheduled = true;
+          queueMicrotask(() => {
+            if (this.scheduled) {
+              runEffect();
+            }
+          });
+        }
+        return;
+      }
+
+      runEffect();
     };
 
     // Run the effect immediately
@@ -278,6 +291,7 @@ export class Effect {
    * Stop the effect and run cleanup
    */
   dispose(): void {
+    this.scheduled = false;
     if (this.cleanup) {
       this.cleanup();
       this.cleanup = undefined;

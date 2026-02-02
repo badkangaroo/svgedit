@@ -81,7 +81,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Generated SVG should match parser output (elements have `data-uuid` on load)
     - _Requirements: 9.4, 11.2, 11.3_
   
-  - [ ]* 6.2 Write validation tests for generated SVG
+  - [x] 6.2 Write validation tests for generated SVG
     - Verify SVG structure and UUID assignment
     - Ensure all elements have valid `data-uuid` attributes
     - _Requirements: 11.3_
@@ -106,7 +106,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Verify selection works with UUID-based helpers
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 11.1_
   
-  - [ ]* 8.2 Run selection tests across all browsers
+  - [x] 8.2 Run selection tests across all browsers
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 

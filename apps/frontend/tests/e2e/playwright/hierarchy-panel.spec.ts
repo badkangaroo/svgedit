@@ -26,6 +26,10 @@ import {
 } from '../../helpers/test-data-generators';
 import { selectTool, drawPrimitive } from '../../helpers/tool-helpers';
 
+// Hierarchy panel lives inside svg-editor-app's shadow root
+const hierarchyLocator = (page: { locator: (s: string) => { locator: (s: string) => unknown } }) =>
+  page.locator('svg-editor-app').locator('svg-hierarchy-panel');
+
 test.describe('Hierarchy Panel', () => {
   test.beforeEach(async ({ page }) => {
     // Enable console logging from browser
@@ -42,13 +46,13 @@ test.describe('Hierarchy Panel', () => {
     await page.reload();
     await waitForEditorReady(page);
     await loadSimpleTestSVG(page);
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     await expect(hierarchy.locator('.node-content').first()).toBeVisible();
     await expect(hierarchy.getByText('simple-rect')).toBeVisible();
   });
 
   test('should select element from hierarchy click', async ({ page }) => {
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     
     // Find the first rect node (test-rect) using locator
     // Note: The text content includes <rect> and #test-rect
@@ -62,17 +66,17 @@ test.describe('Hierarchy Panel', () => {
     expect(selectedIds.length).toBeGreaterThan(0);
     expect(selectedIds[0]).toContain('rect');
     
-    // Verify canvas shows selection
-    const canvas = page.locator('svg-canvas');
+    // Verify canvas shows selection (canvas is inside app shadow root)
+    const canvas = page.locator('svg-editor-app').locator('svg-canvas');
     await expect(canvas.locator('.selection-outline')).toBeVisible();
     
-    // Verify inspector shows the element
-    const inspector = page.locator('svg-attribute-inspector');
+    // Verify inspector shows the element (inspector is inside app shadow root)
+    const inspector = page.locator('svg-editor-app').locator('svg-attribute-inspector');
     await expect(inspector.locator('.element-info')).toBeVisible();
   });
 
   test('should expand node on toggle click', async ({ page }) => {
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     
     // Find the group node
     const groupNode = hierarchy.locator('.node-content').filter({ hasText: '<g>' }).first();
@@ -89,7 +93,7 @@ test.describe('Hierarchy Panel', () => {
   });
 
   test('should collapse node on toggle click', async ({ page }) => {
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     
     // Find the group node
     const groupNode = hierarchy.locator('.node-content').filter({ hasText: '<g>' }).first();
@@ -105,7 +109,7 @@ test.describe('Hierarchy Panel', () => {
   });
 
   test('should show children when node expanded', async ({ page }) => {
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     
     // Find the group node
     const groupNode = hierarchy.locator('.node-content').filter({ hasText: '<g>' }).first();
@@ -134,7 +138,7 @@ test.describe('Hierarchy Panel', () => {
   });
 
   test('should update hierarchy when element created', async ({ page }) => {
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     const initialCount = await hierarchy.locator('.node-content').count();
     
     // Create a new rectangle using the tool palette
@@ -152,7 +156,7 @@ test.describe('Hierarchy Panel', () => {
   });
 
   test('should update hierarchy when element deleted', async ({ page }) => {
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     const initialCount = await hierarchy.locator('.node-content').count();
     
     // Select an element
@@ -174,7 +178,7 @@ test.describe('Hierarchy Panel', () => {
     await loadSVGContent(page, largeSVG);
     
     // Verify performance indicator is shown
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     const indicator = hierarchy.locator('.performance-indicator');
     
     await expect(indicator).toBeVisible();
@@ -187,7 +191,7 @@ test.describe('Hierarchy Panel', () => {
     const largeSVG = generateLargeSVG(1200);
     await loadSVGContent(page, largeSVG);
     
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     const indicator = hierarchy.locator('.performance-indicator');
     
     await expect(indicator).toBeVisible();
@@ -200,7 +204,7 @@ test.describe('Hierarchy Panel', () => {
     const largeSVG = generateLargeSVG(1500);
     await loadSVGContent(page, largeSVG);
     
-    const hierarchy = page.locator('svg-hierarchy-panel');
+    const hierarchy = hierarchyLocator(page);
     
     // Verify virtual scrolling is enabled
     await expect(hierarchy.locator('.performance-indicator')).toBeVisible();

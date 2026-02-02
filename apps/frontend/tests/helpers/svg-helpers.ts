@@ -50,8 +50,14 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
         // Yield to microtask queue so reactive effects run (hierarchy panel subscribes to documentTree)
         await new Promise<void>((resolve) => queueMicrotask(resolve));
 
+        // Hierarchy panel lives inside svg-editor-app's shadow root
+        const getHierarchyPanel = () => {
+          const app = document.querySelector('svg-editor-app');
+          return app?.shadowRoot?.querySelector('svg-hierarchy-panel') ?? null;
+        };
+
         // Force refresh as safety net if effect did not run
-        const hierarchy = document.querySelector('svg-hierarchy-panel');
+        const hierarchy = getHierarchyPanel();
         if (hierarchy && typeof (hierarchy as any).refresh === 'function') {
           (hierarchy as any).refresh();
         }
@@ -59,7 +65,7 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
         // Wait for hierarchy to populate (up to 2s)
         const start = Date.now();
         const checkHierarchy = () => {
-          const h = document.querySelector('svg-hierarchy-panel');
+          const h = getHierarchyPanel();
           if (h?.shadowRoot) {
             const nodes = h.shadowRoot.querySelectorAll('.node-content');
             if (nodes.length > 0) return true;
@@ -72,7 +78,7 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
         }
 
         if (!checkHierarchy()) {
-          const h = document.querySelector('svg-hierarchy-panel') as HTMLElement;
+          const h = getHierarchyPanel() as HTMLElement | null;
           const debugLog = h?.shadowRoot?.querySelector('#debug-log');
           const debugInfo = {
             lastUpdate: h?.dataset?.lastUpdate,

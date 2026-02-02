@@ -323,6 +323,9 @@ export class SVGHierarchyPanel extends HTMLElement {
       return;
     }
 
+    // Expand root node(s) by default so document structure is visible on load
+    tree.forEach((node) => this.expandedNodes.add(node.id));
+
     // Flatten the tree for virtual scrolling
     this.flatNodes = this.flattenTree(tree);
     const totalNodes = this.flatNodes.length;
