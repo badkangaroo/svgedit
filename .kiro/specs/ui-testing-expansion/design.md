@@ -3,43 +3,53 @@
 ## Overview
 This design document outlines the implementation strategy for expanding the Playwright UI test suite to comprehensively cover SVG editing functions in the editor application.
 
+## Frontend alignment (hierarchy, attribute, tools, data-uuid)
+
+Tests assume the following frontend behavior; keep this in sync with `apps/frontend`:
+
+- **Element identification:** Elements are identified by **`data-uuid`**. The Element Registry (`src/state/element-registry.ts`) maps `data-uuid` ↔ SVG element and ↔ document tree node. Helpers should prefer `data-uuid` selectors to avoid UI overlays (e.g. selection handles). See **`apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`** for the mapping table and lifecycle.
+- **Hierarchy panel:** Tree is driven by the document tree; selection syncs with canvas and attribute inspector. New/delete/structural edits update the tree; virtual scrolling for large documents.
+- **Attribute inspector:** Edits are applied by UUID via the registry; numeric/color validation and rollback on invalid input.
+- **Tool palette:** Tools create primitives (rect, circle, ellipse, line) that receive a new `data-uuid`; new elements appear in hierarchy and can be selected.
+
 ## Architecture
 
 ### Test Organization Structure
 ```
 apps/frontend/tests/e2e/playwright/
-├── svg-editor.spec.ts              # Existing basic tests
-├── element-selection.spec.ts       # NEW: Selection tests
-├── attribute-editing.spec.ts       # NEW: Attribute modification tests
-├── tool-palette.spec.ts            # NEW: Primitive creation tests
-├── drag-operations.spec.ts         # NEW: Drag-to-move tests
-├── keyboard-shortcuts.spec.ts      # NEW: Keyboard interaction tests
-├── file-operations.spec.ts         # NEW: File menu tests
-├── hierarchy-panel.spec.ts         # NEW: Hierarchy interaction tests
-├── raw-svg-panel.spec.ts           # NEW: Raw SVG editing tests
-├── performance.spec.ts             # NEW: Performance benchmarks
-└── accessibility.spec.ts           # NEW: A11y tests
+├── svg-editor.spec.ts              # Basic tests (app load, panels, theme)
+├── element-selection.spec.ts       # ✅ Selection tests
+├── attribute-editing.spec.ts       # ✅ Attribute modification tests
+├── tool-palette.spec.ts            # ✅ Primitive creation tests
+├── drag-operations.spec.ts         # ✅ Drag-to-move tests
+├── keyboard-shortcuts.spec.ts      # ✅ Keyboard interaction tests
+├── file-operations.spec.ts         # ✅ File menu tests
+├── hierarchy-panel.spec.ts         # ✅ Hierarchy interaction tests
+├── raw-svg-panel.spec.ts           # TODO: Raw SVG editing tests
+├── performance.spec.ts             # TODO: Performance benchmarks
+└── accessibility.spec.ts           # TODO: A11y tests
 ```
 
 ### Helper Functions Structure
 ```
 apps/frontend/tests/helpers/
-├── svg-helpers.ts                  # Existing helpers
-├── selection-helpers.ts            # NEW: Selection utilities
-├── attribute-helpers.ts            # NEW: Attribute editing utilities
-├── tool-helpers.ts                 # NEW: Tool palette utilities
-├── drag-helpers.ts                 # NEW: Drag operation utilities
-└── test-data-generators.ts         # NEW: Test SVG generation
+├── svg-helpers.ts                  # ✅ loadSVGContent, loadTestSVG
+├── selection-helpers.ts            # ✅ Selection utilities (data-uuid aware)
+├── attribute-helpers.ts            # ✅ Attribute editing utilities
+├── tool-helpers.ts                 # ✅ Tool palette + getLastCreatedElementUUID
+├── drag-helpers.ts                 # ✅ Drag (id / data-uuid lookup)
+└── test-data-generators.ts         # ✅ generateTestSVG, generateLargeSVG
 ```
 
 ## Component Interaction Map
 
 ### Element Identification
-Tests should prioritize using `data-uuid` for selecting elements to ensure stability and avoid selecting UI overlays (like selection handles).
+Tests should prioritize using `data-uuid` for selecting elements to ensure stability and avoid selecting UI overlays (like selection handles). The frontend assigns `data-uuid` on load (parser) and when creating primitives (tool palette). See `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`.
 
 ```typescript
-// Good: Select by stable UUID
+// Good: Select by stable UUID (content SVG)
 const element = canvas.locator(`svg [data-uuid="${uuid}"]`);
+// Helpers may use svg.svg-content or svg [data-uuid] for consistency
 
 // Bad: Select by tag name (might match overlays)
 const element = canvas.locator('svg rect').first();
@@ -105,10 +115,10 @@ test.describe('Element Selection', () => {
 });
 ```
 
-**Helper Functions Needed:**
-- `selectElement(page, elementId)` - Select element by ID
+**Helper Functions (implemented):**
+- `selectElement(page, identifier)` - Select element by ID or `data-uuid`
 - `verifySelectionSync(page, elementIds)` - Verify selection across panels
-- `getSelectedElements(page)` - Get currently selected element IDs
+- `getSelectedElements(page)` - Get currently selected element IDs (by UUID when using data-uuid)
 
 ### 2. Attribute Editing Tests (`attribute-editing.spec.ts`)
 
@@ -153,9 +163,9 @@ test.describe('Attribute Editing', () => {
 });
 ```
 
-**Helper Functions Needed:**
-- `editAttribute(page, attributeName, value)` - Edit attribute value
-- `verifyAttributeValue(page, elementId, attributeName, expectedValue)` - Verify attribute
+**Helper Functions (implemented):**
+- `editAttribute(page, attributeName, value)` - Edit attribute value in inspector
+- `verifyAttributeValue(page, elementId, attributeName, expectedValue)` - Verify attribute (elementId can be UUID)
 - `expectValidationError(page, attributeName, errorMessage)` - Check validation
 
 ### 3. Tool Palette Tests (`tool-palette.spec.ts`)
@@ -204,10 +214,11 @@ test.describe('Tool Palette', () => {
 });
 ```
 
-**Helper Functions Needed:**
+**Helper Functions (implemented):**
 - `selectTool(page, toolName)` - Activate a tool
-- `drawPrimitive(page, toolName, startX, startY, endX, endY)` - Create primitive
+- `drawPrimitive(page, toolName, startX, startY, endX, endY)` - Create primitive (new elements get `data-uuid`)
 - `verifyPrimitiveCreated(page, elementType)` - Verify creation
+- `getLastCreatedElementUUID(page, type)` - Get `data-uuid` of last created element for assertions
 
 ### 4. Drag Operations Tests (`drag-operations.spec.ts`)
 
@@ -254,9 +265,9 @@ test.describe('Drag Operations', () => {
 });
 ```
 
-**Helper Functions Needed:**
-- `dragElement(page, elementId, deltaX, deltaY)` - Drag element
-- `getElementPosition(page, elementId)` - Get element coordinates
+**Helper Functions (implemented):**
+- `dragElement(page, identifier, deltaX, deltaY)` - Drag element (identifier: id, data-original-id, or data-uuid)
+- `getElementPosition(page, identifier)` - Get element coordinates
 - `verifyElementMoved(page, elementId, expectedX, expectedY)` - Verify position
 
 ### 5. Keyboard Shortcuts Tests (`keyboard-shortcuts.spec.ts`)
@@ -375,6 +386,7 @@ test.describe('Hierarchy Panel', () => {
     await loadTestSVG(page);
     
     const hierarchy = page.locator('svg-hierarchy-panel');
+    // Hierarchy nodes may use data-node-id (id) or data-uuid depending on implementation
     const node = hierarchy.locator('[data-node-id="test-rect"]');
     await node.click();
     
@@ -620,22 +632,22 @@ test.describe('Accessibility', () => {
 import { Page, Locator } from '@playwright/test';
 
 /**
- * Select an element by ID or UUID in the canvas
+ * Select an element by ID or data-uuid in the canvas (content SVG).
+ * Prefer data-uuid for stability; avoids UI overlays (e.g. selection handles).
  */
 export async function selectElement(page: Page, identifier: string): Promise<void> {
   const canvas = page.locator('svg-canvas');
-  // Try ID then UUID
   const element = canvas.locator(`svg [id="${identifier}"], svg [data-uuid="${identifier}"]`).first();
   await element.click();
 }
 
 /**
- * Select multiple elements with Ctrl+Click
+ * Select multiple elements with Ctrl+Click (identifiers can be id or data-uuid).
  */
 export async function selectMultipleElements(page: Page, elementIds: string[]): Promise<void> {
   for (let i = 0; i < elementIds.length; i++) {
     const canvas = page.locator('svg-canvas');
-    const element = canvas.locator(`svg [id="${elementIds[i]}"]`);
+    const element = canvas.locator(`svg [id="${elementIds[i]}"], svg [data-uuid="${elementIds[i]}"]`).first();
     
     if (i === 0) {
       await element.click();
@@ -712,7 +724,7 @@ export async function editAttribute(
 }
 
 /**
- * Verify attribute value in canvas element
+ * Verify attribute value in canvas element (elementId can be id or data-uuid).
  */
 export async function verifyAttributeValue(
   page: Page,
@@ -721,7 +733,7 @@ export async function verifyAttributeValue(
   expectedValue: string
 ): Promise<void> {
   const canvas = page.locator('svg-canvas');
-  const element = canvas.locator(`svg [id="${elementId}"]`);
+  const element = canvas.locator(`svg [id="${elementId}"], svg [data-uuid="${elementId}"]`).first();
   await expect(element).toHaveAttribute(attributeName, expectedValue);
 }
 
@@ -1073,42 +1085,33 @@ When component behavior changes:
 
 ## Implementation Phases
 
-### Phase 1: Core Functionality (Priority: High)
+### Phase 1: Core Functionality (Priority: High) — ✅ Done
 - Element selection tests
 - Attribute editing tests
 - Tool palette tests
-- Helper function library
+- Helper function library (selection, attribute, tool, test-data-generators, svg-helpers)
 
-**Estimated Effort:** 3-4 days
-
-### Phase 2: Advanced Interactions (Priority: High)
+### Phase 2: Advanced Interactions (Priority: High) — ✅ Done
 - Drag operations tests
 - Keyboard shortcuts tests
 - File operations tests
+- Drag helpers
 
-**Estimated Effort:** 2-3 days
+### Phase 3: Panel Interactions (Priority: Medium) — Partially done
+- ✅ Hierarchy panel tests
+- TODO: Raw SVG panel tests
 
-### Phase 3: Panel Interactions (Priority: Medium)
-- Hierarchy panel tests
-- Raw SVG panel tests
-
-**Estimated Effort:** 2 days
-
-### Phase 4: Quality & Performance (Priority: Medium)
+### Phase 4: Quality & Performance (Priority: Medium) — TODO
 - Performance tests
 - Accessibility tests
 - Visual regression tests
 
-**Estimated Effort:** 2-3 days
-
-### Phase 5: CI/CD Integration (Priority: High)
+### Phase 5: CI/CD Integration (Priority: High) — TODO
 - GitHub Actions workflow
 - Test reporting
 - Failure notifications
 
-**Estimated Effort:** 1 day
-
-**Total Estimated Effort:** 10-13 days
+**Total Estimated Effort:** 10-13 days (Phases 1–2 and hierarchy complete; remaining as above)
 
 ## Success Criteria
 
@@ -1148,14 +1151,16 @@ When component behavior changes:
 
 ## Implementation Notes
 
+### data-uuid and Element Registry
+- Elements are identified by **`data-uuid`**; the Element Registry (`element-registry.ts`) maintains maps: UUID ↔ SVG element, UUID ↔ DocumentNode, id ↔ UUID, element ↔ UUID.
+- Parser assigns `data-uuid` on load; primitive tools assign it when creating rect/circle/ellipse/line. Serializer strips it on save/export by default (`keepUUID` option for tests).
+- See **`apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`** for the full mapping table, lifecycle, and test usage.
+
 ### Reactivity and State Management
 - `svg-canvas` relies on `svgDocument` signal for rendering.
-- `SVGAttributeInspector` modifies the `svgDocument` DOM structure in-place.
-- Signals (reference-based) do not automatically emit when an object property is mutated in-place.
-- **CRITICAL**: `svg-canvas` MUST subscribe to `rawSVG` signal in addition to `svgDocument` to catch updates triggered by `SVGAttributeInspector`. The inspector updates `rawSVG` via `documentStateUpdater` after modifying attributes.
-- This pattern ensures that `svg-canvas` re-renders (cloning the updated document) whenever attributes change, maintaining consistency across views.
+- Attribute edits are applied by UUID via `ElementRegistry.setAttribute`/`removeAttribute`, which update both DOM and tree and trigger `onAttributeChange` (raw SVG sync).
+- **CRITICAL**: `svg-canvas` MUST subscribe to `rawSVG` (or equivalent) so it re-renders when the inspector updates attributes, maintaining consistency across views.
 
 ### Tool Palette Testing
-- Tool activation relies on `toolPaletteState.activeTool`.
-- Drag operations in Playwright (headless) can be flaky if canvas dimensions or visibility are not fully stabilized.
-- Ensure proper waits (`waitForEditorReady`, `waitForTimeout`) after selecting tools and before dragging to allow state propagation.
+- Tool activation relies on `toolPaletteState.activeTool`. New primitives receive a `data-uuid`; use `getLastCreatedElementUUID()` or `querySelectorAll('... [data-uuid]')` for assertions.
+- Drag operations in Playwright (headless) can be flaky if canvas dimensions or visibility are not fully stabilized. Use proper waits after selecting tools and before dragging.

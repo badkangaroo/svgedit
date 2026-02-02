@@ -1,287 +1,394 @@
-# UI Testing Expansion - Tasks
+# UI Testing Expansion - Implementation Tasks
 
-## Frontend alignment (hierarchy, attribute, tools)
+## Overview
 
-Tests assume the following frontend behavior; keep this in sync with `apps/frontend`:
+This task list implements comprehensive Playwright UI tests for the SVG editor, covering element selection, attribute editing, tool palette, drag operations, keyboard shortcuts, file operations, hierarchy panel, raw SVG editing, performance, and accessibility.
 
-- **Element identification:** Elements are identified by **`data-uuid`** (see `src/docs/DATA_UUID_AND_REGISTRY.md`). The Element Registry maps `data-uuid` ↔ SVG element and ↔ document tree node; helpers should prefer `data-uuid` selectors to avoid UI overlays (e.g. selection handles).
-- **Hierarchy panel:** Tree is driven by the document tree; selection syncs with canvas and attribute inspector. New/delete/structural edits update the tree; virtual scrolling for large documents. Tests: select from tree, expand/collapse, sync on create/delete.
-- **Attribute inspector:** Edits are applied by UUID via the registry; numeric/color validation and rollback on invalid input. Tests: edit attributes, verify canvas and raw SVG update, validation errors.
-- **Tool palette:** Tools create primitives (rect, circle, ellipse, line) that receive a new `data-uuid`; new elements appear in hierarchy and can be selected. Tests: activate tool, draw primitive, preview, auto-select, hierarchy update.
+**Key Implementation Strategy:**
+- **Element Identification:** All tests and helpers use `data-uuid` for element identification (Requirements 11.1, 11.4)
+- **Element Registry:** The Element Registry (`element-registry.ts`) maps `data-uuid` ↔ SVG element ↔ DocumentNode
+- **Stable Selectors:** Using `data-uuid` avoids selecting UI overlays (selection handles, etc.) and provides stable test selectors
+- **Documentation:** See `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md` for complete mapping details
 
-## Phase 1: Core Functionality (Priority: High)
+## Tasks
 
-### 1. Setup Helper Function Library
-- [x] 1.1 Create `tests/helpers/selection-helpers.ts`
-  - [x] 1.1.1 Implement `selectElement(page, elementId)` function
-  - [x] 1.1.2 Implement `selectMultipleElements(page, elementIds)` function
-  - [x] 1.1.3 Implement `verifySelectionSync(page, elementIds)` function
-  - [x] 1.1.4 Implement `getSelectedElements(page)` function
-  - [x] 1.1.5 Add unit tests for helper functions
+- [x] 1. Setup helper function library
+  - Create reusable helper functions for test operations
+  - Implement selection, attribute, tool, drag, and test data generation helpers
+  - All helpers prioritize `data-uuid` for element identification
+  - _Requirements: 11.1, 11.4_
 
-- [x] 1.2 Create `tests/helpers/attribute-helpers.ts`
-  - [x] 1.2.1 Implement `editAttribute(page, attributeName, value)` function
-  - [x] 1.2.2 Implement `verifyAttributeValue(page, elementId, attributeName, expectedValue)` function
-  - [x] 1.2.3 Implement `expectValidationError(page, attributeName, errorMessage)` function
-  - [x] 1.2.4 Add unit tests for helper functions
+- [x] 2. Implement selection helper functions
+  - [x] 2.1 Create `tests/helpers/selection-helpers.ts` with core selection utilities
+    - Implement `selectElement()`, `selectMultipleElements()`, `verifySelectionSync()`, `getSelectedElements()`
+    - **CRITICAL:** Use `data-uuid` selectors (e.g., `svg [data-uuid="${uuid}"]`) to avoid UI overlays
+    - Support fallback to `id` attribute when UUID not available
+    - Helpers query content SVG (`.svg-content` or `svg [data-uuid]`) to exclude selection handles
+    - _Requirements: 11.1, 11.4_
+  
+  - [ ]* 2.2 Write unit tests for selection helpers
+    - Test helper functions with mock page objects
+    - Verify UUID-based selection works correctly
+    - _Requirements: 11.1_
 
-- [x] 1.3 Create `tests/helpers/tool-helpers.ts`
-  - [x] 1.3.1 Implement `selectTool(page, toolName)` function
-  - [x] 1.3.2 Implement `drawPrimitive(page, toolName, startX, startY, endX, endY)` function
-  - [x] 1.3.3 Implement `verifyPrimitiveCreated(page, elementType)` function
-  - [x] 1.3.4 Add unit tests for helper functions
+- [x] 3. Implement attribute helper functions
+  - [x] 3.1 Create `tests/helpers/attribute-helpers.ts` with attribute editing utilities
+    - Implement `editAttribute()`, `verifyAttributeValue()`, `expectValidationError()`
+    - **CRITICAL:** Support UUID-based element lookup via Element Registry
+    - `verifyAttributeValue()` accepts `data-uuid` or `id` as elementId parameter
+    - Use `svg [data-uuid="${uuid}"]` or `svg [id="${id}"]` selectors in content SVG
+    - _Requirements: 2.1, 2.2, 2.5, 11.1, 11.4_
+  
+  - [ ]* 3.2 Write unit tests for attribute helpers
+    - Test validation and error handling
+    - Verify UUID-based attribute updates work correctly
+    - _Requirements: 2.5, 2.6_
 
-- [x] 1.4 Create `tests/helpers/test-data-generators.ts`
-  - [x] 1.4.1 Implement `generateLargeSVG(elementCount)` functio
-  - [x] 1.4.2 Implement `generateTestSVG()` function
-  - [x] 1.4.3 Add validation tests for generated SVG
+- [x] 4. Implement tool palette helper functions
+  - [x] 4.1 Create `tests/helpers/tool-helpers.ts` with tool interaction utilities
+    - Implement `selectTool()`, `drawPrimitive()`, `verifyPrimitiveCreated()`
+    - **NEW:** Implement `getLastCreatedElementUUID()` to retrieve `data-uuid` of newly created elements
+    - Primitive tools (rect, circle, ellipse, line) assign `data-uuid` on creation
+    - Use `querySelectorAll('svg [data-uuid]')` to find newly created elements
+    - Handle tool activation and primitive creation workflows
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 11.3_
+  
+  - [ ]* 4.2 Write unit tests for tool helpers
+    - Test tool selection and primitive creation logic
+    - Verify `data-uuid` assignment on new elements
+    - _Requirements: 3.1, 11.3_
 
-- [x] 1.5 Update `tests/helpers/svg-helpers.ts`
-  - [x] 1.5.1 Refactor existing `loadTestSVG()` to use programmatic loading
-  - [x] 1.5.2 Add `loadSVGContent(page, content)` function
-  - [x] 1.5.3 Ensure compatibility with new helper functions
+- [x] 5. Implement drag operation helper functions
+  - [x] 5.1 Create `tests/helpers/drag-helpers.ts` with drag utilities
+    - Implement `dragElement()`, `getElementPosition()`, `verifyElementMoved()`
+    - **CRITICAL:** Support lookup by `data-uuid`, `id`, or `data-original-id`
+    - Use `svg [data-uuid="${identifier}"], svg [id="${identifier}"], svg [data-original-id="${identifier}"]` selector pattern
+    - `getElementPosition()` handles different element types (rect: x/y, circle: cx/cy, etc.)
+    - Prioritize `data-uuid` for stability; fallback to `id` for compatibility
+    - _Requirements: 4.1, 4.2, 11.4_
+  
+  - [ ]* 5.2 Write unit tests for drag helpers
+    - Test position calculations and drag operations
+    - Verify UUID-based drag operations work correctly
+    - _Requirements: 4.1, 11.4_
 
-### 2. Element Selection Tests
-- [x] 2.1 Create `tests/e2e/playwright/element-selection.spec.ts`
-  - [x] 2.1.1 Write test: "should select element on canvas click"
-  - [x] 2.1.2 Write test: "should synchronize selection across all panels"
-  - [x] 2.1.3 Write test: "should support multi-select with Ctrl key"
-  - [x] 2.1.4 Write test: "should clear selection on empty canvas click"
-  - [x] 2.1.5 Write test: "should show selection highlights correctly"
-  - [x] 2.1.6 Run tests across all browsers (Chromium, Firefox, WebKit)
+- [x] 6. Implement test data generators
+  - [x] 6.1 Create `tests/helpers/test-data-generators.ts` with SVG generation utilities
+    - Implement `generateLargeSVG()` for performance testing (1000+ elements)
+    - Implement `generateTestSVG()` for standard test scenarios
+    - **CRITICAL:** All generated elements MUST include `data-uuid` attributes
+    - Use `crypto.randomUUID()` or similar to assign unique UUIDs
+    - Generated SVG should match parser output (elements have `data-uuid` on load)
+    - _Requirements: 9.4, 11.2, 11.3_
+  
+  - [ ]* 6.2 Write validation tests for generated SVG
+    - Verify SVG structure and UUID assignment
+    - Ensure all elements have valid `data-uuid` attributes
+    - _Requirements: 11.3_
 
-### 3. Attribute Editing Tests
-- [x] 3.1 Create `tests/e2e/playwright/attribute-editing.spec.ts`
-  - [x] 3.1.1 Write test: "should edit numeric attributes (x, y, width, height)"
-  - [x] 3.1.2 Write test: "should edit color attributes (fill, stroke)"
-  - [x] 3.1.3 Write test: "should update canvas when attribute changes"
-  - [x] 3.1.4 Write test: "should update raw SVG when attribute changes"
-  - [x] 3.1.5 Write test: "should validate numeric attribute ranges"
-  - [x] 3.1.6 Write test: "should validate color attribute formats"
-  - [x] 3.1.7 Write test: "should show validation errors for invalid input"
-  - [x] 3.1.8 Write test: "should rollback invalid changes"
-  - [x] 3.1.9 Run tests across all browsers
+- [x] 7. Update existing SVG helpers
+  - [x] 7.1 Refactor `tests/helpers/svg-helpers.ts` for programmatic loading
+    - Update `loadTestSVG()` to use programmatic loading instead of file uploads
+    - Add `loadSVGContent(page, content)` function
+    - **CRITICAL:** Ensure loaded SVG elements receive `data-uuid` (parser assigns them)
+    - Verify Element Registry is rebuilt after loading
+    - Ensure compatibility with new helper functions
+    - _Requirements: 11.1, 11.2, 11.3_
 
-### 4. Tool Palette Tests
-- [x] 4.1 Create `tests/e2e/playwright/tool-palette.spec.ts`
-  - [x] 4.1.1 Write test: "should activate tool on click"
-  - [x] 4.1.2 Write test: "should create rectangle with drag"
-  - [x] 4.1.3 Write test: "should create circle with drag"
-  - [x] 4.1.4 Write test: "should create ellipse with drag"
-  - [x] 4.1.5 Write test: "should create line with drag"
-  - [x] 4.1.6 Write test: "should show preview during drag"
-  - [x] 4.1.7 Write test: "should auto-select newly created element"
-  - [x] 4.1.8 Write test: "should update hierarchy panel after creation"
-  - [x] 4.1.9 Run tests across all browsers
+- [x] 8. Implement element selection tests
+  - [x] 8.1 Create `tests/e2e/playwright/element-selection.spec.ts`
+    - Write test: "should select element on canvas click"
+    - Write test: "should synchronize selection across all panels"
+    - Write test: "should support multi-select with Ctrl key"
+    - Write test: "should clear selection on empty canvas click"
+    - Write test: "should show selection highlights correctly"
+    - **Tests use `data-uuid` selectors for element identification**
+    - Verify selection works with UUID-based helpers
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 11.1_
+  
+  - [ ]* 8.2 Run selection tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
+- [x] 9. Implement attribute editing tests
+  - [x] 9.1 Create `tests/e2e/playwright/attribute-editing.spec.ts`
+    - Write test: "should edit numeric attributes (x, y, width, height)"
+    - Write test: "should edit color attributes (fill, stroke)"
+    - Write test: "should update canvas when attribute changes"
+    - Write test: "should update raw SVG when attribute changes"
+    - Write test: "should validate numeric attribute ranges"
+    - Write test: "should validate color attribute formats"
+    - Write test: "should show validation errors for invalid input"
+    - Write test: "should rollback invalid changes"
+    - **Tests verify attributes on elements using `data-uuid` selectors**
+    - Attribute inspector operates on selected UUID via Element Registry
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 11.1, 11.4_
+  
+  - [ ]* 9.2 Run attribute editing tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
+- [x] 10. Implement tool palette tests
+  - [x] 10.1 Create `tests/e2e/playwright/tool-palette.spec.ts`
+    - Write test: "should activate tool on click"
+    - Write test: "should create rectangle with drag"
+    - Write test: "should create circle with drag"
+    - Write test: "should create ellipse with drag"
+    - Write test: "should create line with drag"
+    - Write test: "should show preview during drag"
+    - Write test: "should auto-select newly created element"
+    - Write test: "should update hierarchy panel after creation"
+    - **Tests verify new elements have `data-uuid` assigned by primitive tools**
+    - Use `getLastCreatedElementUUID()` helper for assertions
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 11.3_
+  
+  - [ ]* 10.2 Run tool palette tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-## Phase 2: Advanced Interactions (Priority: High)
+- [ ] 11. Checkpoint - Verify core functionality tests
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify all helpers correctly use `data-uuid` for element identification
 
-### 5. Drag Operations Tests
-- [x] 5.1 Create `tests/helpers/drag-helpers.ts`
-  - [x] 5.1.1 Implement `dragElement(page, elementId, deltaX, deltaY)` function
-  - [x] 5.1.2 Implement `getElementPosition(page, elementId)` function
-  - [x] 5.1.3 Implement `verifyElementMoved(page, elementId, expectedX, expectedY)` function
-  - [x] 5.1.4 Add unit tests for helper functions
+- [x] 12. Implement drag operation tests
+  - [x] 12.1 Create `tests/e2e/playwright/drag-operations.spec.ts`
+    - Write test: "should move element by dragging"
+    - Write test: "should update position in attribute inspector during drag"
+    - Write test: "should drag multiple selected elements together"
+    - Write test: "should show dragging visual feedback"
+    - Write test: "should update selection outline during drag"
+    - **Tests use `data-uuid` to identify and drag elements**
+    - Drag helpers support UUID, id, and data-original-id lookup
+    - _Requirements: 4.1, 4.2, 4.3, 4.5, 11.4_
+  
+  - [ ]* 12.2 Run drag operation tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 4.1, 4.2, 4.3, 4.5_
 
-- [x] 5.2 Create `tests/e2e/playwright/drag-operations.spec.ts`
-  - [x] 5.2.1 Write test: "should move element by dragging"
-  - [x] 5.2.2 Write test: "should update position in attribute inspector during drag"
-  - [x] 5.2.3 Write test: "should drag multiple selected elements together"
-  - [x] 5.2.4 Write test: "should show dragging visual feedback"
-  - [x] 5.2.5 Write test: "should update selection outline during drag"
-  - [x] 5.2.6 Run tests across all browsers
+- [x] 13. Implement keyboard shortcuts tests
+  - [x] 13.1 Create `tests/e2e/playwright/keyboard-shortcuts.spec.ts`
+    - Write test: "should create new document with Ctrl+N"
+    - Write test: "should trigger open dialog with Ctrl+O"
+    - Write test: "should save document with Ctrl+S"
+    - Write test: "should save as with Ctrl+Shift+S"
+    - Write test: "should switch to select tool with 'V' key"
+    - Write test: "should switch to rectangle tool with 'R' key"
+    - Write test: "should switch to circle tool with 'C' key"
+    - Write test: "should switch to ellipse tool with 'E' key"
+    - Write test: "should switch to line tool with 'L' key"
+    - Tests verify tool activation and document operations
+    - _Requirements: 5.1, 5.2, 5.3, 5.7_
+  
+  - [ ]* 13.2 Run keyboard shortcuts tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 5.1, 5.2, 5.3, 5.7_
 
-### 6. Keyboard Shortcuts Tests
-- [x] 6.1 Create `tests/e2e/playwright/keyboard-shortcuts.spec.ts`
-  - [x] 6.1.1 Write test: "should create new document with Ctrl+N"
-  - [x] 6.1.2 Write test: "should trigger open dialog with Ctrl+O"
-  - [x] 6.1.3 Write test: "should save document with Ctrl+S"
-  - [x] 6.1.4 Write test: "should save as with Ctrl+Shift+S"
-  - [x] 6.1.5 Write test: "should switch to select tool with 'V' key"
-  - [x] 6.1.6 Write test: "should switch to rectangle tool with 'R' key"
-  - [x] 6.1.7 Write test: "should switch to circle tool with 'C' key"
-  - [x] 6.1.8 Write test: "should switch to ellipse tool with 'E' key"
-  - [x] 6.1.9 Write test: "should switch to line tool with 'L' key"
-  - [x] 6.1.10 Run tests across all browsers
+- [x] 14. Implement file operations tests
+  - [x] 14.1 Create `tests/e2e/playwright/file-operations.spec.ts`
+    - Write test: "should open file menu on click"
+    - Write test: "should close file menu on outside click"
+    - Write test: "should show all menu items (New, Open, Save, Save As)"
+    - Write test: "should create new document from menu"
+    - Write test: "should save document and download file"
+    - Write test: "should save edited document with changes"
+    - Write test: "should verify downloaded file contains correct SVG"
+    - **Note:** Serializer strips `data-uuid` by default on save/export (clean output)
+    - Tests verify functional file operations, not UUID preservation
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 11.2_
+  
+  - [ ]* 14.2 Run file operations tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-### 7. File Operations Tests
-- [x] 7.1 Create `tests/e2e/playwright/file-operations.spec.ts`
-  - [x] 7.1.1 Write test: "should open file menu on click"
-  - [x] 7.1.2 Write test: "should close file menu on outside click"
-  - [x] 7.1.3 Write test: "should show all menu items (New, Open, Save, Save As)"
-  - [x] 7.1.4 Write test: "should create new document from menu"
-  - [x] 7.1.5 Write test: "should save document and download file"
-  - [x] 7.1.6 Write test: "should save edited document with changes"
-  - [x] 7.1.7 Write test: "should verify downloaded file contains correct SVG"
-  - [x] 7.1.8 Run tests across all browsers
+- [ ] 15. Checkpoint - Verify advanced interaction tests
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify file operations correctly handle UUID lifecycle (strip on export)
 
+- [x] 16. Implement hierarchy panel tests
+  - [x] 16.1 Create `tests/e2e/playwright/hierarchy-panel.spec.ts`
+    - Write test: "should select element from hierarchy click"
+    - Write test: "should expand node on toggle click"
+    - Write test: "should collapse node on toggle click"
+    - Write test: "should show children when node expanded"
+    - Write test: "should update hierarchy when element created"
+    - Write test: "should update hierarchy when element deleted"
+    - Write test: "should enable virtual scrolling for large documents (>1000 nodes)"
+    - Write test: "should show performance indicator for virtual scrolling"
+    - Write test: "should scroll to selected node in virtual mode"
+    - **Hierarchy nodes may use `data-node-id` (element id) or `data-uuid` depending on implementation**
+    - Tests verify hierarchy-canvas-inspector synchronization via Element Registry
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 11.1_
+  
+  - [ ]* 16.2 Run hierarchy panel tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
+- [ ] 17. Implement raw SVG panel tests
+  - [ ] 17.1 Create `tests/e2e/playwright/raw-svg-panel.spec.ts`
+    - Write test: "should display current SVG markup"
+    - Write test: "should update canvas when raw SVG edited"
+    - Write test: "should update hierarchy when raw SVG edited"
+    - Write test: "should show error for invalid SVG syntax"
+    - Write test: "should not update document on parse error"
+    - Write test: "should update raw SVG when attribute edited"
+    - Write test: "should update raw SVG when element created"
+    - **Parser assigns `data-uuid` to elements when parsing raw SVG edits**
+    - Element Registry is rebuilt after successful parse
+    - Tests verify raw SVG ↔ canvas ↔ hierarchy synchronization
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 11.3_
+  
+  - [ ]* 17.2 Run raw SVG panel tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-## Phase 3: Panel Interactions (Priority: Medium)
+- [ ] 18. Implement performance tests
+  - [ ] 18.1 Create `tests/e2e/playwright/performance.spec.ts`
+    - Write test: "should select elements within 100ms"
+    - Write test: "should update attributes within 50ms"
+    - Write test: "should load large document (1000 elements) within 2s"
+    - Write test: "should maintain 55+ fps during drag operations"
+    - Write test: "should handle selection in large documents efficiently"
+    - Write test: "should render hierarchy for large documents quickly"
+    - **Use `generateLargeSVG()` with `data-uuid` on all elements**
+    - Element Registry O(1) lookups ensure performance at scale
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 11.3_
+  
+  - [ ]* 18.2 Document performance baselines
+    - Record baseline metrics for each performance test
+    - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-### 8. Hierarchy Panel Tests
-- [x] 8.1 Create `tests/e2e/playwright/hierarchy-panel.spec.ts`
-  - [x] 8.1.1 Write test: "should select element from hierarchy click"
-  - [x] 8.1.2 Write test: "should expand node on toggle click"
-  - [x] 8.1.3 Write test: "should collapse node on toggle click"
-  - [x] 8.1.4 Write test: "should show children when node expanded"
-  - [x] 8.1.5 Write test: "should update hierarchy when element created"
-  - [x] 8.1.6 Write test: "should update hierarchy when element deleted"
-  - [x] 8.1.7 Write test: "should enable virtual scrolling for large documents (>1000 nodes)"
-  - [x] 8.1.8 Write test: "should show performance indicator for virtual scrolling"
-  - [x] 8.1.9 Write test: "should scroll to selected node in virtual mode"
-  - [x] 8.1.10 Run tests across all browsers
+- [ ] 19. Implement accessibility tests
+  - [ ] 19.1 Create `tests/e2e/playwright/accessibility.spec.ts`
+    - Write test: "should have ARIA labels on all tool buttons"
+    - Write test: "should have ARIA label on theme toggle"
+    - Write test: "should support keyboard navigation with Tab"
+    - Write test: "should show visible focus indicators"
+    - Write test: "should have proper aria-pressed states on tools"
+    - Write test: "should have proper ARIA roles on panels"
+    - Write test: "should announce state changes"
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+  
+  - [ ]* 19.2 Run accessibility tests across all browsers
+    - Verify tests pass in Chromium, Firefox, and WebKit
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
+  
+  - [ ]* 19.3 Run axe-core accessibility audit
+    - Integrate axe-core for automated accessibility testing
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_
 
-### 9. Raw SVG Panel Tests
-- [ ] 9.1 Create `tests/e2e/playwright/raw-svg-panel.spec.ts`
-  - [ ] 9.1.1 Write test: "should display current SVG markup"
-  - [ ] 9.1.2 Write test: "should update canvas when raw SVG edited"
-  - [ ] 9.1.3 Write test: "should update hierarchy when raw SVG edited"
-  - [ ] 9.1.4 Write test: "should show error for invalid SVG syntax"
-  - [ ] 9.1.5 Write test: "should not update document on parse error"
-  - [ ] 9.1.6 Write test: "should update raw SVG when attribute edited"
-  - [ ] 9.1.7 Write test: "should update raw SVG when element created"
-  - [ ] 9.1.8 Run tests across all browsers
+- [ ] 20. Checkpoint - Verify quality and performance tests
+  - Ensure all tests pass, ask the user if questions arise.
+  - Verify Element Registry performance with large documents (O(1) lookups)
 
+- [ ] 21. Setup CI/CD integration
+  - [ ] 21.1 Create GitHub Actions workflow file
+    - Create `.github/workflows/ui-tests.yml`
+    - Configure Node.js setup (version 18)
+    - Configure Playwright browser installation
+    - Configure test execution with proper working directory
+    - _Requirements: Non-functional (CI/CD integration)_
+  
+  - [ ] 21.2 Configure test artifact uploads
+    - Configure HTML report upload on test completion
+    - Configure screenshot upload on test failure
+    - Configure video upload on test failure
+    - _Requirements: Non-functional (CI/CD integration)_
+  
+  - [ ] 21.3 Configure test reporting
+    - Configure HTML reporter in `playwright.config.ts`
+    - Configure JSON reporter for CI consumption
+    - Set up test result summary in PR comments (optional)
+    - _Requirements: Non-functional (CI/CD integration)_
+  
+  - [ ] 21.4 Optimize test execution for CI
+    - Configure parallel execution settings (2 workers in CI)
+    - Configure retry strategy (2 retries in CI)
+    - Configure test timeouts (30s per test)
+    - Verify total execution time < 5 minutes
+    - _Requirements: Non-functional (Performance, Reliability)_
 
+- [ ] 22. Create test documentation
+  - [ ] 22.1 Update test README
+    - Update `tests/README.md` with new test suites
+    - **CRITICAL:** Document `data-uuid` and Element Registry usage patterns
+    - Document Element Registry mapping: UUID ↔ element, UUID ↔ node, id ↔ UUID
+    - Document helper function usage (selection, attribute, tool, drag)
+    - Document test data generators and UUID assignment
+    - Reference `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md` for complete details
+    - Explain why `data-uuid` is preferred over `id` (stability, avoids UI overlays)
+    - Document UUID lifecycle: assigned by parser/tools, stripped on export
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+  
+  - [ ] 22.2 Create test maintenance guide
+    - Document how to add new tests
+    - Document how to update tests when features change
+    - Document how to handle flaky tests
+    - Document browser-specific issues and workarounds
+    - **Include section on Element Registry and UUID-based testing patterns**
+    - _Requirements: Non-functional (Maintainability)_
+  
+  - [ ]* 22.3 Add troubleshooting guide
+    - Document common test failures and solutions
+    - Document debugging techniques
+    - Include UUID-related debugging tips (verify UUID assignment, check Element Registry state)
+    - _Requirements: Non-functional (Maintainability)_
 
-## Phase 4: Quality & Performance (Priority: Medium)
+- [ ] 23. Create test fixtures
+  - [ ] 23.1 Create SVG test fixture files
+    - Create `tests/fixtures/simple.svg` (minimal SVG with basic shapes)
+    - Create `tests/fixtures/complex.svg` (complex nested structure)
+    - Create `tests/fixtures/large.svg` (1000+ elements for performance testing)
+    - Copy `test.svg` to `tests/fixtures/test.svg`
+    - **IMPORTANT:** Fixture files do NOT need `data-uuid` attributes
+    - Parser assigns `data-uuid` when loading fixtures into the editor
+    - Test data generators (`generateTestSVG`, `generateLargeSVG`) include `data-uuid` for programmatic loading
+    - _Requirements: 9.4, 11.2, 11.3_
 
-### 10. Performance Tests
-- [ ] 10.1 Create `tests/e2e/playwright/performance.spec.ts`
-  - [ ] 10.1.1 Write test: "should select elements within 100ms"
-  - [ ] 10.1.2 Write test: "should update attributes within 50ms"
-  - [ ] 10.1.3 Write test: "should load large document (1000 elements) within 2s"
-  - [ ] 10.1.4 Write test: "should maintain 55+ fps during drag operations"
-  - [ ] 10.1.5 Write test: "should handle selection in large documents efficiently"
-  - [ ] 10.1.6 Write test: "should render hierarchy for large documents quickly"
-  - [ ] 10.1.7 Run tests across all browsers
-  - [ ] 10.1.8 Document performance baselines
+- [ ] 24. Final validation and cleanup
+  - [ ] 24.1 Run complete test suite validation
+    - Run all tests in Chromium
+    - Run all tests in Firefox
+    - Run all tests in WebKit
+    - Verify no flaky tests (run 3 times)
+    - Verify total execution time < 5 minutes
+    - _Requirements: Non-functional (Performance, Reliability)_
+  
+  - [ ] 24.2 Code review and cleanup
+    - Review all test files for consistency
+    - Review helper functions for reusability
+    - Remove duplicate code
+    - Add missing JSDoc comments
+    - Format code with Prettier
+    - _Requirements: Non-functional (Maintainability)_
+  
+  - [ ] 24.3 Coverage analysis
+    - Verify all requirements have corresponding tests
+    - Identify any missing test scenarios
+    - Add tests for identified gaps
+    - Document test coverage metrics (target: 90%+)
+    - _Requirements: All requirements 1.1-11.5_
+  
+  - [ ] 24.4 Final CI/CD verification
+    - Run complete test suite in CI environment
+    - Verify test reports are generated correctly
+    - Verify screenshots are captured on failure
+    - Verify all documentation is up to date
+    - _Requirements: Non-functional (CI/CD integration)_
 
-### 11. Accessibility Tests
-- [ ] 11.1 Create `tests/e2e/playwright/accessibility.spec.ts`
-  - [ ] 11.1.1 Write test: "should have ARIA labels on all tool buttons"
-  - [ ] 11.1.2 Write test: "should have ARIA label on theme toggle"
-  - [ ] 11.1.3 Write test: "should support keyboard navigation with Tab"
-  - [ ] 11.1.4 Write test: "should show visible focus indicators"
-  - [ ] 11.1.5 Write test: "should have proper aria-pressed states on tools"
-  - [ ] 11.1.6 Write test: "should have proper ARIA roles on panels"
-  - [ ] 11.1.7 Write test: "should announce state changes"
-  - [ ] 11.1.8 Run tests across all browsers
-  - [ ] 11.1.9 Run axe-core accessibility audit (optional)
+## Notes
 
-### 12. Visual Regression Tests (Optional)
-- [ ] 12.1* Setup visual regression testing with Percy or Chromatic
-  - [ ] 12.1.1* Install Percy or Chromatic
-  - [ ] 12.1.2* Configure visual regression settings
-  - [ ] 12.1.3* Create baseline screenshots
-
-- [ ] 12.2* Create visual regression test suite
-  - [ ] 12.2.1* Write test: "should match initial layout screenshot"
-  - [ ] 12.2.2* Write test: "should match dark theme screenshot"
-  - [ ] 12.2.3* Write test: "should match canvas with loaded SVG"
-  - [ ] 12.2.4* Write test: "should match hierarchy panel"
-  - [ ] 12.2.5* Write test: "should match attribute inspector"
-
-
-
-## Phase 5: CI/CD Integration (Priority: High)
-
-### 13. CI/CD Setup
-- [ ] 13.1 Create GitHub Actions workflow
-  - [ ] 13.1.1 Create `.github/workflows/ui-tests.yml`
-  - [ ] 13.1.2 Configure Node.js setup
-  - [ ] 13.1.3 Configure Playwright browser installation
-  - [ ] 13.1.4 Configure test execution
-  - [ ] 13.1.5 Configure artifact upload for test reports
-  - [ ] 13.1.6 Configure artifact upload for screenshots on failure
-  - [ ] 13.1.7 Test workflow on pull request
-
-- [ ] 13.2 Configure test reporting
-  - [ ] 13.2.1 Configure HTML reporter in playwright.config.ts
-  - [ ] 13.2.2 Configure JSON reporter for CI
-  - [ ] 13.2.3 Set up test result summary in PR comments (optional)
-  - [ ] 13.2.4 Configure failure notifications (optional)
-
-- [ ] 13.3 Optimize test execution
-  - [ ] 13.3.1 Configure parallel execution settings
-  - [ ] 13.3.2 Configure retry strategy for CI
-  - [ ] 13.3.3 Configure test timeouts
-  - [ ] 13.3.4 Verify total execution time < 5 minutes
-
-### 14. Documentation
-- [ ] 14.1 Update test documentation
-  - [x] 14.1.1 Update `tests/README.md` with new test suites and data-uuid usage
-  - [x] 14.1.2 Document `data-uuid` and Element Registry (see `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`)
-  - [ ] 14.1.3 Document helper function usage (selection, attribute, tool, drag helpers)
-  - [ ] 14.1.4 Document test data generators
-  - [ ] 14.1.5 Add troubleshooting guide for common issues
-
-- [ ] 14.2 Create test maintenance guide
-  - [ ] 14.2.1 Document how to add new tests
-  - [ ] 14.2.2 Document how to update tests when features change
-  - [ ] 14.2.3 Document how to handle flaky tests
-  - [ ] 14.2.4 Document browser-specific issues and workarounds
-
-
-
-## Phase 6: Validation & Cleanup (Priority: High)
-
-### 15. Test Validation
-- [ ] 15.1 Run complete test suite
-  - [ ] 15.1.1 Run all tests in Chromium
-  - [ ] 15.1.2 Run all tests in Firefox
-  - [ ] 15.1.3 Run all tests in WebKit
-  - [ ] 15.1.4 Verify no flaky tests (run 3 times)
-  - [ ] 15.1.5 Verify total execution time < 5 minutes
-
-- [ ] 15.2 Code review and cleanup
-  - [ ] 15.2.1 Review all test files for consistency
-  - [ ] 15.2.2 Review helper functions for reusability
-  - [ ] 15.2.3 Remove duplicate code
-  - [ ] 15.2.4 Add missing JSDoc comments
-  - [ ] 15.2.5 Format code with Prettier
-
-- [ ] 15.3 Coverage analysis
-  - [ ] 15.3.1 Verify all requirements have corresponding tests
-  - [ ] 15.3.2 Identify any missing test scenarios
-  - [ ] 15.3.3 Add tests for identified gaps
-  - [ ] 15.3.4 Document test coverage metrics
-
-### 16. Final Integration
-- [ ] 16.1 Integrate with existing test suite
-  - [ ] 16.1.1 Ensure new tests don't conflict with existing tests
-  - [ ] 16.1.2 Update package.json scripts if needed
-  - [ ] 16.1.3 Verify all tests can run together
-  - [ ] 16.1.4 Update CI/CD to run all tests
-
-- [ ] 16.2 Create test fixtures
-  - [ ] 16.2.1 Create `tests/fixtures/simple.svg`
-  - [ ] 16.2.2 Create `tests/fixtures/complex.svg`
-  - [ ] 16.2.3 Create `tests/fixtures/large.svg`
-  - [ ] 16.2.4 Copy `test.svg` to `tests/fixtures/test.svg`
-
-- [ ] 16.3 Final verification
-  - [ ] 16.3.1 Run complete test suite in CI environment
-  - [ ] 16.3.2 Verify test reports are generated correctly
-  - [ ] 16.3.3 Verify screenshots are captured on failure
-  - [ ] 16.3.4 Verify all documentation is up to date
-
-## Summary
-
-**Total Tasks:** 16 major tasks with 150+ subtasks
-**Estimated Effort:** 10-13 days
-**Priority Breakdown:**
-- High Priority: Phases 1, 2, 5, 6 (Core functionality, advanced interactions, CI/CD, validation)
-- Medium Priority: Phases 3, 4 (Panel interactions, quality & performance)
-
-**Success Criteria:**
-- ✅ All tests pass across 3 browsers
-- ✅ Zero flaky tests
-- ✅ Test execution time < 5 minutes
-- ✅ 90%+ coverage of editing functions
-- ✅ CI/CD integration complete
-- ✅ Documentation complete
-
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- All tests use TypeScript and Playwright test framework
+- **CRITICAL:** Tests MUST use `data-uuid` for element identification (Requirements 11.1, 11.4)
+- **Element Registry:** Maps `data-uuid` ↔ SVG element ↔ DocumentNode for O(1) lookups
+- **UUID Assignment:** Parser assigns on load, primitive tools assign on creation
+- **UUID Lifecycle:** Preserved in-memory during session, stripped on save/export by default
+- **Selector Pattern:** Use `svg [data-uuid="${uuid}"]` to avoid UI overlays (selection handles)
+- **Helper Functions:** All helpers (selection, attribute, tool, drag) prioritize `data-uuid` lookup
+- **Test Data:** Generators include `data-uuid` on all elements for stable assertions
+- **Documentation:** See `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md` for complete details
+- Helper functions reduce code duplication and improve maintainability
+- Tests are organized by feature area for clarity
+- Checkpoints ensure incremental validation throughout implementation
+- CI/CD integration ensures automated testing on every PR
+- Target: 90%+ test coverage, <5 minute execution time, zero flaky tests

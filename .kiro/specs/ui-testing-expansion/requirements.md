@@ -3,6 +3,14 @@
 ## Overview
 Expand the Playwright UI test suite to cover SVG editing functions including element selection, attribute editing, primitive creation with tools, drag-to-move operations, undo/redo, and keyboard shortcuts.
 
+## Implementation status (alignment with frontend)
+
+The following are implemented and aligned with `apps/frontend`:
+
+- **Element identification:** Elements use `data-uuid`; the Element Registry (`element-registry.ts`) maps UUID ↔ SVG element and UUID ↔ document tree node. See `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`.
+- **Implemented test suites:** Element selection, attribute editing, tool palette, hierarchy panel, drag operations, keyboard shortcuts, file operations (Phases 1–3). Helpers: selection, attribute, tool, drag, svg-helpers, test-data-generators.
+- **Pending:** Raw SVG panel E2E, performance, accessibility, CI/CD workflow, documentation polish (Phases 4–5).
+
 ## User Stories
 
 ### 1. Element Selection Testing
@@ -112,11 +120,11 @@ Expand the Playwright UI test suite to cover SVG editing functions including ele
 **As a developer**, I want a reliable way to identify and interact with SVG elements in tests so that I can write stable and deterministic tests.
 
 **Acceptance Criteria:**
-- 11.1 Test helpers must use `data-uuid` for finding elements whenever possible
-- 11.2 `data-uuid` must be preserved during SVG serialization and state updates
-- 11.3 Newly created elements (via tools or raw edit) must have a `data-uuid` assigned
-- 11.4 Helper functions like `getElementPosition` and `dragElement` must support `data-uuid` lookup
-- 11.5 `getElementCount` helpers must differentiate between content elements (with `data-uuid`) and UI overlays (handles, selection boxes)
+- 11.1 Test helpers must use `data-uuid` for finding elements whenever possible (see `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`).
+- 11.2 `data-uuid` must be preserved in-memory during state updates; serialization strips it by default on save/export (optional `keepUUID` for tests).
+- 11.3 Newly created elements (via tools or raw edit) must have a `data-uuid` assigned (parser and primitive tools assign it).
+- 11.4 Helper functions like `getElementPosition` and `dragElement` must support lookup by `data-uuid` (and optionally by `id` or `data-original-id`).
+- 11.5 `getElementCount` helpers must differentiate between content elements (with `data-uuid`) and UI overlays (handles, selection boxes).
 
 ## Non-Functional Requirements
 
