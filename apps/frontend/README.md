@@ -15,6 +15,7 @@ The main visual editor application for SVG Edit.
 apps/frontend/
 ├── src/
 │   ├── components/     # Web Components (canvas, panels, tools)
+│   ├── docs/           # Design and architecture docs (e.g. data-uuid, registry)
 │   ├── state/          # Reactive signal-based state management
 │   ├── utils/          # Utility functions and helpers
 │   ├── workers/        # Web Workers for expensive operations
@@ -69,13 +70,22 @@ npm run build
 npm run preview
 ```
 
-## Element Identification
+## Element Identification and Registry
 
-Each SVG element in the editor is assigned a stable UUID via the `data-uuid` attribute.
-- This UUID is generated when an element is created or when an SVG is loaded.
-- It provides a persistent identifier for elements across sessions and during testing.
-- The `data-uuid` attribute is stripped when saving or exporting the SVG to ensure clean output.
-- Selection and updates are tracked using this `data-uuid` to handle cases where `id` attributes may be non-unique or missing.
+Each SVG element in the editor is assigned a stable **`data-uuid`** attribute used for selection, attribute edits, and cross-panel sync.
+
+- **Assignment:** The UUID is set when an element is created (e.g. by the tool palette) or when SVG is loaded (parser assigns one if missing).
+- **Registry:** The **Element Registry** (`src/state/element-registry.ts`) keeps in-memory maps: `data-uuid` ↔ SVG element, `data-uuid` ↔ document tree node, and `id` ↔ `data-uuid`. All lookups by UUID or element are O(1).
+- **Export:** The `data-uuid` attribute is stripped when saving or exporting SVG by default, so output stays clean; the serializer can optionally keep it (e.g. for tests).
+- **Why:** Using `data-uuid` instead of relying only on `id` handles missing or non-unique `id`s and gives tests a stable selector that avoids UI overlays (e.g. selection handles).
+
+For full details (maps, lifecycle, tests), see **[Data UUID and Registry](src/docs/DATA_UUID_AND_REGISTRY.md)**.
+
+## Documentation
+
+- **[Data UUID and Registry](src/docs/DATA_UUID_AND_REGISTRY.md)** — `data-uuid` attribute, Element Registry maps, and test usage.
+- **[Selection performance](src/docs/SELECTION_PERFORMANCE_OPTIMIZATIONS.md)** — Selection and sync optimizations.
+- Component-level notes live in `src/components/` (e.g. `HIERARCHY_PANEL_IMPLEMENTATION.md`, `TOOL_PALETTE_IMPLEMENTATION.md`).
 
 ## Planning & Checkpoints
 

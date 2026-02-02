@@ -28,20 +28,35 @@ npx playwright test
 ```
 tests/
 ├── e2e/                          # End-to-end tests
-│   ├── playwright/               # Playwright browser tests
-│   │   └── svg-editor.spec.ts   # Full browser E2E tests
+│   ├── playwright/               # Playwright browser E2E tests
+│   │   ├── svg-editor.spec.ts   # App load, panels, theme, resize
+│   │   ├── element-selection.spec.ts   # Canvas click, multi-select, sync ✅
+│   │   ├── attribute-editing.spec.ts   # Inspector edits, validation ✅
+│   │   ├── tool-palette.spec.ts        # Tools, primitives, preview ✅
+│   │   ├── hierarchy-panel.spec.ts     # Tree select, expand/collapse ✅
+│   │   ├── drag-operations.spec.ts     # Drag to move, sync ✅
+│   │   ├── keyboard-shortcuts.spec.ts  # Shortcuts (V, R, C, E, L, file) ✅
+│   │   ├── file-operations.spec.ts     # Menu, New, Save, Save As ✅
+│   │   └── *-helpers.spec.ts    # Helper unit tests
 │   ├── test-svg-loading.test.ts # test.svg loading tests ✅
 │   └── sprint2-checkpoint.test.ts
-├── unit/                         # Component unit tests
-│   └── setup.test.ts
+├── helpers/                      # Shared E2E/unit helpers
+│   ├── selection-helpers.ts     # selectElement, verifySelectionSync ✅
+│   ├── attribute-helpers.ts     # editAttribute, verifyAttributeValue ✅
+│   ├── tool-helpers.ts          # selectTool, drawPrimitive, getLastCreatedElementUUID ✅
+│   ├── drag-helpers.ts          # dragElement, getElementPosition ✅
+│   ├── svg-helpers.ts           # loadSVGContent, loadTestSVG ✅
+│   └── test-data-generators.ts  # generateTestSVG, generateLargeSVG ✅
+├── unit/                         # Unit tests for helpers and components
+│   └── ...
 ├── properties/                   # Property-based tests
 │   └── example.properties.test.ts
 ├── utils/                        # Test utilities
 │   └── test-svg-loader.ts       # Helper for loading test.svg ✅
 ├── setup.ts                      # Global test setup
 ├── vitest.d.ts                   # TypeScript definitions
-├── UI_TESTING_SPEC.md           # Comprehensive testing spec ✅
-├── UI_TESTING_SETUP.md          # Setup guide ✅
+├── UI_TESTING_SPEC.md            # Comprehensive testing spec ✅
+├── UI_TESTING_SETUP.md           # Setup guide ✅
 └── README.md                     # This file
 ```
 
@@ -76,20 +91,30 @@ tests/
 - ✅ Attribute editing performance
 - ✅ Raw SVG parsing with error handling
 
-#### Playwright E2E (`playwright/svg-editor.spec.ts`)
-- ✅ Application loading
-- ✅ Panel visibility
-- ✅ Theme switching
-- ✅ Panel resizing
-- ✅ Visual regression (screenshots)
-- ✅ Accessibility checks
+#### Playwright E2E (`playwright/*.spec.ts`)
+- ✅ Application loading, panels, theme, resize (`svg-editor.spec.ts`)
+- ✅ Element selection: canvas click, multi-select, sync (`element-selection.spec.ts`)
+- ✅ Attribute editing: numeric/color, validation, rollback (`attribute-editing.spec.ts`)
+- ✅ Tool palette: activate tool, create rect/circle/ellipse/line, preview, hierarchy update (`tool-palette.spec.ts`)
+- ✅ Hierarchy panel: select from tree, expand/collapse, virtual scrolling (`hierarchy-panel.spec.ts`)
+- ✅ Drag operations: move element, sync to inspector (`drag-operations.spec.ts`)
+- ✅ Keyboard shortcuts: tools (V, R, C, E, L), file (Ctrl+N, O, S, Shift+S) (`keyboard-shortcuts.spec.ts`)
+- ✅ File operations: menu, New, Save, Save As, download (`file-operations.spec.ts`)
+- ✅ Helper unit tests: selection, attribute, tool, drag helpers
+
+### Element selection and data-uuid
+
+Tests and helpers target elements by **`data-uuid`** when possible so selectors stay stable and UI overlays (e.g. selection handles) are not matched. The frontend assigns `data-uuid` on load (parser) and when creating primitives (tool palette). See **[Data UUID and Registry](../src/docs/DATA_UUID_AND_REGISTRY.md)** for the mapping table and usage.
+
+- **Selection helpers:** Prefer `svg [data-uuid="${uuid}"]` inside the content SVG.
+- **Drag helpers:** Resolve by `id`, `data-original-id`, or `data-uuid`.
+- **Tool helpers:** New elements are found via `... [data-uuid]`; e.g. `getLastCreatedElementUUID()` returns the new element’s `data-uuid`.
 
 ### 🚧 To Be Implemented
 
-- File operations (open, save, save as)
-- Canvas interaction (click, drag, zoom, pan)
-- Attribute editing in inspector
-- Raw SVG text editing
+- Raw SVG panel E2E tests (display, edit, parse errors)
+- Performance and accessibility E2E suites
+- CI/CD workflow and test reporting
 - Component unit tests with Testing Library
 
 ## Test Asset: test.svg
@@ -181,8 +206,9 @@ Duration    1.64s
 
 ## Documentation
 
-- **[UI_TESTING_SPEC.md](./UI_TESTING_SPEC.md)** - Comprehensive testing strategy and scenarios
-- **[UI_TESTING_SETUP.md](./UI_TESTING_SETUP.md)** - Setup guide and troubleshooting
+- **[UI_TESTING_SPEC.md](./UI_TESTING_SPEC.md)** — Comprehensive testing strategy and scenarios
+- **[UI_TESTING_SETUP.md](./UI_TESTING_SETUP.md)** — Setup guide and troubleshooting
+- **[Data UUID and Registry](../src/docs/DATA_UUID_AND_REGISTRY.md)** — `data-uuid` attribute, Element Registry maps, and how tests/helpers use them
 
 ## Best Practices
 
@@ -194,12 +220,11 @@ Duration    1.64s
 
 ## Next Steps
 
-1. ✅ Install Playwright: `npm install -D @playwright/test`
-2. ✅ Run existing tests: `npm test test-svg-loading` (20/20 passing)
-3. 🚧 Implement file loading UI
-4. 🚧 Write canvas interaction tests
-5. 🚧 Add attribute editing tests
-6. 🚧 Set up CI/CD pipeline
+1. ✅ Install Playwright and run E2E: `npx playwright test`
+2. ✅ Run Vitest: `npm test` (unit + test-svg-loading, etc.)
+3. 🚧 Raw SVG panel E2E tests
+4. 🚧 Performance and accessibility E2E suites
+5. 🚧 Set up CI/CD pipeline and test reporting
 
 ## Resources
 

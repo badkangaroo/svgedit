@@ -1,5 +1,14 @@
 # UI Testing Expansion - Tasks
 
+## Frontend alignment (hierarchy, attribute, tools)
+
+Tests assume the following frontend behavior; keep this in sync with `apps/frontend`:
+
+- **Element identification:** Elements are identified by **`data-uuid`** (see `src/docs/DATA_UUID_AND_REGISTRY.md`). The Element Registry maps `data-uuid` ↔ SVG element and ↔ document tree node; helpers should prefer `data-uuid` selectors to avoid UI overlays (e.g. selection handles).
+- **Hierarchy panel:** Tree is driven by the document tree; selection syncs with canvas and attribute inspector. New/delete/structural edits update the tree; virtual scrolling for large documents. Tests: select from tree, expand/collapse, sync on create/delete.
+- **Attribute inspector:** Edits are applied by UUID via the registry; numeric/color validation and rollback on invalid input. Tests: edit attributes, verify canvas and raw SVG update, validation errors.
+- **Tool palette:** Tools create primitives (rect, circle, ellipse, line) that receive a new `data-uuid`; new elements appear in hierarchy and can be selected. Tests: activate tool, draw primitive, preview, auto-select, hierarchy update.
+
 ## Phase 1: Core Functionality (Priority: High)
 
 ### 1. Setup Helper Function Library
@@ -204,10 +213,11 @@
 
 ### 14. Documentation
 - [ ] 14.1 Update test documentation
-  - [ ] 14.1.1 Update `tests/README.md` with new test suites
-  - [ ] 14.1.2 Document helper function usage
-  - [ ] 14.1.3 Document test data generators
-  - [ ] 14.1.4 Add troubleshooting guide for common issues
+  - [x] 14.1.1 Update `tests/README.md` with new test suites and data-uuid usage
+  - [x] 14.1.2 Document `data-uuid` and Element Registry (see `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`)
+  - [ ] 14.1.3 Document helper function usage (selection, attribute, tool, drag helpers)
+  - [ ] 14.1.4 Document test data generators
+  - [ ] 14.1.5 Add troubleshooting guide for common issues
 
 - [ ] 14.2 Create test maintenance guide
   - [ ] 14.2.1 Document how to add new tests
