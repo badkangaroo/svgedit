@@ -223,8 +223,8 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 17. Implement raw SVG panel tests
-  - [ ] 17.1 Create `tests/e2e/playwright/raw-svg-panel.spec.ts`
+- [x] 17. Implement raw SVG panel tests
+  - [x] 17.1 Create `tests/e2e/playwright/raw-svg-panel.spec.ts`
     - Write test: "should display current SVG markup"
     - Write test: "should update canvas when raw SVG edited"
     - Write test: "should update hierarchy when raw SVG edited"
@@ -241,8 +241,8 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 8.1, 8.2, 8.3, 8.4_
 
-- [ ] 18. Implement performance tests
-  - [ ] 18.1 Create `tests/e2e/playwright/performance.spec.ts`
+- [x] 18. Implement performance tests
+  - [x] 18.1 Create `tests/e2e/playwright/performance.spec.ts`
     - Write test: "should select elements within 100ms"
     - Write test: "should update attributes within 50ms"
     - Write test: "should load large document (1000 elements) within 2s"
