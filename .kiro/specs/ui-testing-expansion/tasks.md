@@ -26,7 +26,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Helpers query content SVG (`.svg-content` or `svg [data-uuid]`) to exclude selection handles
     - _Requirements: 11.1, 11.4_
   
-  - [ ]* 2.2 Write unit tests for selection helpers
+  - [x] 2.2 Write unit tests for selection helpers
     - Test helper functions with mock page objects
     - Verify UUID-based selection works correctly
     - _Requirements: 11.1_
@@ -39,7 +39,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Use `svg [data-uuid="${uuid}"]` or `svg [id="${id}"]` selectors in content SVG
     - _Requirements: 2.1, 2.2, 2.5, 11.1, 11.4_
   
-  - [ ]* 3.2 Write unit tests for attribute helpers
+  - [x] 3.2 Write unit tests for attribute helpers
     - Test validation and error handling
     - Verify UUID-based attribute updates work correctly
     - _Requirements: 2.5, 2.6_
@@ -53,7 +53,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Handle tool activation and primitive creation workflows
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 11.3_
   
-  - [ ]* 4.2 Write unit tests for tool helpers
+  - [x] 4.2 Write unit tests for tool helpers
     - Test tool selection and primitive creation logic
     - Verify `data-uuid` assignment on new elements
     - _Requirements: 3.1, 11.3_
@@ -67,7 +67,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Prioritize `data-uuid` for stability; fallback to `id` for compatibility
     - _Requirements: 4.1, 4.2, 11.4_
   
-  - [ ]* 5.2 Write unit tests for drag helpers
+  - [x] 5.2 Write unit tests for drag helpers
     - Test position calculations and drag operations
     - Verify UUID-based drag operations work correctly
     - _Requirements: 4.1, 11.4_
