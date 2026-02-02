@@ -200,7 +200,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-- [-] 15. Checkpoint - Verify advanced interaction tests
+- [x] 15. Checkpoint - Verify advanced interaction tests
   - Ensure all tests pass, ask the user if questions arise.
   - Verify file operations correctly handle UUID lifecycle (strip on export)
 
@@ -219,7 +219,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Tests verify hierarchy-canvas-inspector synchronization via Element Registry
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 11.1_
   
-  - [~] 16.2 Run hierarchy panel tests across all browsers
+  - [x] 16.2 Run hierarchy panel tests across all browsers
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 

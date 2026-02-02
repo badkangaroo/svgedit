@@ -809,8 +809,14 @@ export class SVGCanvas extends HTMLElement {
     
     if (parseResult.success && parseResult.document) {
       // Find the new element in the parsed document (by temp ID / data-original-id)
-      const parsedNewElement = parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
-        parseResult.document.querySelector(`#${tempId}`);
+      const tagName = element.tagName.toLowerCase();
+      let parsedNewElement = parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
+        parseResult.document.querySelector(`#${CSS.escape(tempId)}`);
+      // Fallback: last element of same tag is the one we just added; ensure it has data-uuid
+      if (!parsedNewElement && newElementUUID) {
+        const all = parseResult.document.querySelectorAll(tagName);
+        parsedNewElement = all[all.length - 1] as SVGElement | undefined;
+      }
       // Ensure it has data-uuid so registry and tests can find it (DOMParser may not preserve it)
       if (parsedNewElement && newElementUUID) {
         parsedNewElement.setAttribute('data-uuid', newElementUUID);
