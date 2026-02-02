@@ -41,6 +41,15 @@ apps/frontend/tests/helpers/
 └── test-data-generators.ts         # ✅ generateTestSVG, generateLargeSVG
 ```
 
+### Unit tests for data-uuid pipeline (Vitest)
+```
+apps/frontend/src/utils/
+├── svg-parser.test.ts              # ✅ Parser: assign/preserve data-uuid (describe "data-uuid handling")
+├── svg-element-tracking-pipeline.test.ts  # ✅ Round-trip, new element, element registry
+└── primitive-tools-simple.test.ts  # ✅ createPrimitiveElement sets data-uuid
+```
+See **Unit tests for SVG element tracking** under Component Interaction Map and **Task 6a** in `tasks.md`.
+
 ## Component Interaction Map
 
 ### Element Identification
@@ -54,6 +63,21 @@ const element = canvas.locator(`svg [data-uuid="${uuid}"]`);
 // Bad: Select by tag name (might match overlays)
 const element = canvas.locator('svg rect').first();
 ```
+
+### Unit tests for SVG element tracking (data-uuid pipeline)
+The internal pipeline that tracks SVG elements via `data-uuid` is covered by **unit tests** (Vitest). These ensure the pipeline stays reliable regardless of E2E timing or environment. Reference these when debugging UUID-related E2E failures or when changing parser/serializer/registry/primitive creation.
+
+| File | What it covers |
+|------|----------------|
+| `apps/frontend/src/utils/svg-parser.test.ts` | **data-uuid handling** describe: parser assigns `data-uuid` to elements that do not have it; parser preserves existing `data-uuid` when present; parsed document DOM has `data-uuid` on all content elements (root and nested). |
+| `apps/frontend/src/utils/svg-element-tracking-pipeline.test.ts` | **Serialize → parse round-trip:** preserve `data-uuid` with `keepUUID: true`; newly created primitive (createPrimitiveElement → append → serialize → parse) keeps same `data-uuid`; finalizePrimitiveCreation-style lookup (last direct child / data-original-id / id) yields correct `data-uuid`. **Element registry:** rebuild from document only indexes elements with `data-uuid`; rebuild from tree only indexes nodes with `data-uuid` in attributes. |
+| `apps/frontend/src/utils/primitive-tools-simple.test.ts` | **Rectangle Creation:** createPrimitiveElement sets `data-uuid` on created element (UUID format). |
+
+**Run these unit tests:**
+```bash
+cd apps/frontend && npm test -- --run src/utils/svg-parser.test.ts src/utils/svg-element-tracking-pipeline.test.ts src/utils/primitive-tools-simple.test.ts
+```
+Task list: see **Task 6a** in `tasks.md`.
 
 ### Shadow DOM Navigation Strategy
 

@@ -404,6 +404,70 @@ describe('SVGParser', () => {
     });
   });
   
+  describe('data-uuid handling', () => {
+    it('should assign data-uuid to elements that do not have it', () => {
+      const svgText = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="50" height="50"/>
+          <circle cx="50" cy="50" r="20"/>
+        </svg>
+      `;
+      const result = parser.parse(svgText);
+      expect(result.success).toBe(true);
+      expect(result.document).not.toBeNull();
+
+      const rect = result.document!.querySelector('rect');
+      const circle = result.document!.querySelector('circle');
+      expect(rect).not.toBeNull();
+      expect(circle).not.toBeNull();
+      expect(rect!.hasAttribute('data-uuid')).toBe(true);
+      expect(circle!.hasAttribute('data-uuid')).toBe(true);
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      expect(rect!.getAttribute('data-uuid')).toMatch(uuidRegex);
+      expect(circle!.getAttribute('data-uuid')).toMatch(uuidRegex);
+    });
+
+    it('should preserve existing data-uuid when present on elements', () => {
+      const existingUuid = '123e4567-e89b-12d3-a456-426614174000';
+      const svgText = `
+        <svg width="100" height="100">
+          <rect x="10" y="10" width="50" height="50" data-uuid="${existingUuid}"/>
+        </svg>
+      `;
+      const result = parser.parse(svgText);
+      expect(result.success).toBe(true);
+      expect(result.document).not.toBeNull();
+
+      const rect = result.document!.querySelector('rect');
+      expect(rect).not.toBeNull();
+      expect(rect!.getAttribute('data-uuid')).toBe(existingUuid);
+    });
+
+    it('should ensure parsed document DOM has data-uuid on all content elements', () => {
+      const svgText = `
+        <svg width="100" height="100">
+          <g id="group1">
+            <rect x="0" y="0" width="10" height="10"/>
+          </g>
+        </svg>
+      `;
+      const result = parser.parse(svgText);
+      expect(result.success).toBe(true);
+      expect(result.document).not.toBeNull();
+
+      const root = result.document!;
+      const gEl = root.querySelector('g');
+      const rectEl = root.querySelector('rect');
+      expect(root.hasAttribute('data-uuid')).toBe(true);
+      expect(gEl).not.toBeNull();
+      expect(rectEl).not.toBeNull();
+      expect(gEl!.hasAttribute('data-uuid')).toBe(true);
+      expect(rectEl!.hasAttribute('data-uuid')).toBe(true);
+      const withUuid = root.querySelectorAll('[data-uuid]');
+      expect(withUuid.length).toBe(2);
+    });
+  });
+
   describe('Convenience function', () => {
     it('should work with parseSVG convenience function', () => {
       const svgText = '<svg><rect x="0" y="0" width="10" height="10"/></svg>';

@@ -86,6 +86,25 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Ensure all elements have valid `data-uuid` attributes
     - _Requirements: 11.3_
 
+- [x] 6a. Implement unit tests for SVG element tracking pipeline (data-uuid)
+  - [x] 6a.1 Add data-uuid handling tests in `src/utils/svg-parser.test.ts`
+    - Parser assigns `data-uuid` to elements that do not have it
+    - Parser preserves existing `data-uuid` when present on elements
+    - Parsed document DOM has `data-uuid` on all content elements (root, nested)
+    - _Requirements: 11.1, 11.3_
+  
+  - [x] 6a.2 Create `src/utils/svg-element-tracking-pipeline.test.ts`
+    - Serialize (keepUUID) → parse round-trip preserves `data-uuid` on all elements
+    - Newly created primitive (createPrimitiveElement → append → serialize → parse) has same `data-uuid` in parsed document
+    - FinalizePrimitiveCreation path: last direct child / data-original-id / id lookup yields element with correct `data-uuid`
+    - Element registry: rebuild from document only indexes elements with `data-uuid`; elements without are not indexed
+    - Element registry: rebuild from tree only indexes nodes with `data-uuid` in attributes
+    - _Requirements: 11.1, 11.2, 11.3, 11.4_
+  
+  - [x] 6a.3 Add `data-uuid` assertion in `src/utils/primitive-tools-simple.test.ts`
+    - createPrimitiveElement sets `data-uuid` on created element (UUID format)
+    - _Requirements: 11.3_
+
 - [x] 7. Update existing SVG helpers
   - [x] 7.1 Refactor `tests/helpers/svg-helpers.ts` for programmatic loading
     - Update `loadTestSVG()` to use programmatic loading instead of file uploads
@@ -378,7 +397,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
-- All tests use TypeScript and Playwright test framework
+- All tests use TypeScript and Playwright test framework (E2E) or Vitest (unit tests)
 - **CRITICAL:** Tests MUST use `data-uuid` for element identification (Requirements 11.1, 11.4)
 - **Element Registry:** Maps `data-uuid` ↔ SVG element ↔ DocumentNode for O(1) lookups
 - **UUID Assignment:** Parser assigns on load, primitive tools assign on creation
@@ -387,6 +406,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
 - **Helper Functions:** All helpers (selection, attribute, tool, drag) prioritize `data-uuid` lookup
 - **Test Data:** Generators include `data-uuid` on all elements for stable assertions
 - **Documentation:** See `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md` for complete details
+- **Unit tests for data-uuid pipeline (Task 6a):** Run with `npm test -- src/utils/svg-parser.test.ts src/utils/svg-element-tracking-pipeline.test.ts src/utils/primitive-tools-simple.test.ts`. These lock in parser assign/preserve, serialize→parse round-trip, element registry indexing, and primitive creation `data-uuid` so the internal tracking pipeline stays reliable.
 - Helper functions reduce code duplication and improve maintainability
 - Tests are organized by feature area for clarity
 - Checkpoints ensure incremental validation throughout implementation

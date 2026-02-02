@@ -9,6 +9,7 @@ The following are implemented and aligned with `apps/frontend`:
 
 - **Element identification:** Elements use `data-uuid`; the Element Registry (`element-registry.ts`) maps UUID ↔ SVG element and UUID ↔ document tree node. See `apps/frontend/src/docs/DATA_UUID_AND_REGISTRY.md`.
 - **Implemented test suites:** Element selection, attribute editing, tool palette, hierarchy panel, drag operations, keyboard shortcuts, file operations (Phases 1–3). Helpers: selection, attribute, tool, drag, svg-helpers, test-data-generators.
+- **Unit tests for data-uuid pipeline:** Parser assign/preserve `data-uuid` (`src/utils/svg-parser.test.ts`), serialize→parse round-trip and element registry indexing (`src/utils/svg-element-tracking-pipeline.test.ts`), and primitive creation `data-uuid` (`src/utils/primitive-tools-simple.test.ts`). Run with `npm test -- src/utils/svg-parser.test.ts src/utils/svg-element-tracking-pipeline.test.ts src/utils/primitive-tools-simple.test.ts`.
 - **Pending:** Raw SVG panel E2E, performance, accessibility, CI/CD workflow, documentation polish (Phases 4–5).
 
 ## User Stories

@@ -795,7 +795,7 @@ export class SVGCanvas extends HTMLElement {
     // Create the final element
     const element = createPrimitiveElement(tool, startX, startY, endX, endY);
     
-    // Assign a temporary ID so we can find it after parsing
+    // Assign a temporary ID for selection lookup after parse
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     element.setAttribute('id', tempId);
     
@@ -808,16 +808,15 @@ export class SVGCanvas extends HTMLElement {
     const parseResult = svgParser.parse(serializedSVG);
     
     if (parseResult.success && parseResult.document) {
-      // Find the new element in the parsed document (by temp ID / data-original-id)
+      // New element was appended to the root, so in the parsed document it is the last direct child.
       const tagName = element.tagName.toLowerCase();
-      let parsedNewElement = parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
-        parseResult.document.querySelector(`#${CSS.escape(tempId)}`);
-      // Fallback: last element of same tag is the one we just added; ensure it has data-uuid
-      if (!parsedNewElement && newElementUUID) {
-        const all = parseResult.document.querySelectorAll(tagName);
-        parsedNewElement = all[all.length - 1] as SVGElement | undefined;
-      }
-      // Ensure it has data-uuid so registry and tests can find it (DOMParser may not preserve it)
+      const root = parseResult.document;
+      const lastChild = root.children[root.children.length - 1];
+      const parsedNewElement =
+        (lastChild && (lastChild as Element).tagName?.toLowerCase() === tagName
+          ? lastChild
+          : parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
+            parseResult.document.querySelector(`#${CSS.escape(tempId)}`)) as SVGElement | undefined;
       if (parsedNewElement && newElementUUID) {
         parsedNewElement.setAttribute('data-uuid', newElementUUID);
       }

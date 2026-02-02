@@ -36,6 +36,13 @@ describe('Primitive Tools (Simplified)', () => {
       expect(rect.getAttribute('height')).toBe('80');
     });
 
+    it('should set data-uuid on created element for tracking', () => {
+      const rect = createPrimitiveElement('rectangle', 0, 0, 50, 50);
+      const uuid = rect.getAttribute('data-uuid');
+      expect(uuid).toBeTruthy();
+      expect(uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    });
+
     it('should use default size for small drags', () => {
       const rect = createPrimitiveElement('rectangle', 100, 100, 102, 102);
       
