@@ -212,8 +212,10 @@ export async function getElementCount(page: Page, elementType: string): Promise<
  */
 export async function getElementCountWithUUID(page: Page, elementType: string): Promise<number> {
   return await page.evaluate((type) => {
-    const canvas = document.querySelector('svg-canvas');
-    if (!canvas || !canvas.shadowRoot) return 0;
+    const app = document.querySelector('svg-editor-app');
+    if (!app?.shadowRoot) return 0;
+    const canvas = app.shadowRoot.querySelector('svg-canvas');
+    if (!canvas?.shadowRoot) return 0;
     
     const svg = canvas.shadowRoot.querySelector('svg.svg-content');
     if (!svg) return 0;
@@ -258,8 +260,10 @@ export async function waitForElementCountWithUUID(
  */
 export async function getLastElementUUID(page: Page, elementType: string): Promise<string | null> {
   return await page.evaluate((type) => {
-    const canvas = document.querySelector('svg-canvas');
-    if (!canvas || !canvas.shadowRoot) return null;
+    const app = document.querySelector('svg-editor-app');
+    if (!app?.shadowRoot) return null;
+    const canvas = app.shadowRoot.querySelector('svg-canvas');
+    if (!canvas?.shadowRoot) return null;
     
     const svg = canvas.shadowRoot.querySelector('svg.svg-content');
     if (!svg) return null;

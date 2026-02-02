@@ -175,10 +175,12 @@ test.describe('Tool Palette', () => {
     // Wait a moment for preview to appear
     await page.waitForTimeout(200);
     
-    // Debug: Check what's in the SVG
+    // Debug: Check what's in the SVG (canvas is inside svg-editor-app's shadow root)
     const debugInfo = await page.evaluate(() => {
-      const canvas = document.querySelector('svg-canvas');
-      if (!canvas || !canvas.shadowRoot) return { error: 'No canvas or shadowRoot' };
+      const app = document.querySelector('svg-editor-app');
+      if (!app?.shadowRoot) return { error: 'No app or shadowRoot' };
+      const canvas = app.shadowRoot.querySelector('svg-canvas');
+      if (!canvas?.shadowRoot) return { error: 'No canvas or shadowRoot' };
       
       const svg = canvas.shadowRoot.querySelector('svg.svg-content');
       if (!svg) return { error: 'No svg.svg-content' };
@@ -198,8 +200,10 @@ test.describe('Tool Palette', () => {
     // Check for preview element with specific attributes
     // Preview should have opacity="0.5" and stroke-dasharray="4 4"
     const previewInfo = await page.evaluate(() => {
-      const canvas = document.querySelector('svg-canvas');
-      if (!canvas || !canvas.shadowRoot) return { exists: false, hasOpacity: false, hasDashArray: false };
+      const app = document.querySelector('svg-editor-app');
+      if (!app?.shadowRoot) return { exists: false, hasOpacity: false, hasDashArray: false };
+      const canvas = app.shadowRoot.querySelector('svg-canvas');
+      if (!canvas?.shadowRoot) return { exists: false, hasOpacity: false, hasDashArray: false };
       
       const svg = canvas.shadowRoot.querySelector('svg.svg-content');
       if (!svg) return { exists: false, hasOpacity: false, hasDashArray: false };
@@ -236,8 +240,10 @@ test.describe('Tool Palette', () => {
     
     // Verify preview is removed and permanent element is created
     const previewAfterDrag = await page.evaluate(() => {
-      const canvas = document.querySelector('svg-canvas');
-      if (!canvas || !canvas.shadowRoot) return true;
+      const app = document.querySelector('svg-editor-app');
+      if (!app?.shadowRoot) return true;
+      const canvas = app.shadowRoot.querySelector('svg-canvas');
+      if (!canvas?.shadowRoot) return true;
       
       const svg = canvas.shadowRoot.querySelector('svg.svg-content');
       if (!svg) return true;

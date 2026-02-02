@@ -475,10 +475,11 @@ export class SVGHierarchyPanel extends HTMLElement {
     tagSpan.textContent = `<${node.tagName}>`;
     label.appendChild(tagSpan);
 
-    if (node.id) {
+    const displayId = node.attributes?.get('data-original-id') ?? node.id;
+    if (displayId) {
       const idSpan = document.createElement('span');
       idSpan.classList.add('node-id');
-      idSpan.textContent = `#${node.id}`;
+      idSpan.textContent = `#${displayId}`;
       label.appendChild(idSpan);
     }
 
@@ -543,10 +544,11 @@ export class SVGHierarchyPanel extends HTMLElement {
     tagSpan.textContent = `<${node.tagName}>`;
     label.appendChild(tagSpan);
 
-    if (node.id) {
+    const displayId = node.attributes?.get('data-original-id') ?? node.id;
+    if (displayId) {
       const idSpan = document.createElement('span');
       idSpan.classList.add('node-id');
-      idSpan.textContent = `#${node.id}`;
+      idSpan.textContent = `#${displayId}`;
       label.appendChild(idSpan);
     }
 

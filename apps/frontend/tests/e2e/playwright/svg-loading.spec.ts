@@ -70,8 +70,10 @@ test.describe('SVG Loading', () => {
     // We'll wrap this in a waitForFunction to allow for async rendering/parsing
     await page.waitForFunction(
       () => {
-        const canvas = document.querySelector('svg-canvas');
-        if (!canvas || !canvas.shadowRoot) return false;
+        const app = document.querySelector('svg-editor-app');
+        if (!app?.shadowRoot) return false;
+        const canvas = app.shadowRoot.querySelector('svg-canvas');
+        if (!canvas?.shadowRoot) return false;
         
         const root = canvas.shadowRoot;
         // Check for at least one of the major groups to confirm SVG structure is loaded
