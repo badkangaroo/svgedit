@@ -36,6 +36,7 @@ describe('KeyboardShortcutManager', () => {
       expect(grouped.Edit).toBeDefined();
       expect(grouped.Selection).toBeDefined();
       expect(grouped.File).toBeDefined();
+      expect(grouped.Tools).toBeDefined();
     });
   });
 

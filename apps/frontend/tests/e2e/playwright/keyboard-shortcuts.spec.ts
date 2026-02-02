@@ -2,10 +2,15 @@
  * Keyboard Shortcuts E2E Tests
  * 
  * Verifies keyboard shortcuts for file operations and tool selection.
+ * Uses platform-appropriate modifier: Cmd on macOS, Ctrl elsewhere (matches app).
  */
 
+import path from 'node:path';
 import { test, expect } from '@playwright/test';
 import { loadTestSVG, waitForEditorReady } from '../../helpers/svg-helpers';
+
+// App uses Cmd on Mac and Ctrl elsewhere; tests must send the same modifier
+const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
 
 test.describe('Keyboard Shortcuts - File Operations', () => {
   test.beforeEach(async ({ page }) => {
@@ -23,8 +28,11 @@ test.describe('Keyboard Shortcuts - File Operations', () => {
     const initialCount = await svgElements.count();
     expect(initialCount).toBeGreaterThan(0);
     
-    // Trigger new document with Ctrl+N
-    await page.keyboard.press('Control+n');
+    // Ensure focus so key events reach document
+    await canvas.click();
+    
+    // Trigger new document with Ctrl+N / Cmd+N
+    await page.keyboard.press(`${mod}+n`);
     
     // Wait for the new document event to be processed
     await page.waitForTimeout(200);
@@ -35,31 +43,34 @@ test.describe('Keyboard Shortcuts - File Operations', () => {
     expect(newCount).toBe(0);
   });
 
-  test('should trigger open dialog with Ctrl+O', async ({ page }) => {
-    // Note: Ctrl+O typically triggers a file input dialog
-    // In a real browser, this would open a file picker
-    // We can't fully test file picker in Playwright, but we can verify the event is triggered
-    
-    // Listen for the file input to be triggered
-    const fileInputPromise = page.waitForEvent('filechooser', { timeout: 2000 });
-    
-    // Trigger open with Ctrl+O
-    await page.keyboard.press('Control+o');
-    
-    // Verify file chooser was triggered
+  test('should trigger open dialog with Ctrl+O', async ({ page, browserName }) => {
+    // Chromium uses showOpenFilePicker (File System Access API), which does not
+    // trigger Playwright's filechooser event (that is for <input type="file">).
+    test.skip(browserName === 'chromium', 'Chromium uses File System Access API; filechooser only fires for file input fallback');
+
+    // Ctrl+O triggers file input fallback in Firefox/WebKit; we get filechooser
+    await page.locator('svg-canvas').click();
+
+    const fileInputPromise = page.waitForEvent('filechooser', { timeout: 3000 });
+    await page.keyboard.press(`${mod}+o`);
+
     const fileChooser = await fileInputPromise;
     expect(fileChooser).toBeTruthy();
+    await fileChooser.setFiles(path.join(process.cwd(), 'test.svg'));
   });
 
   test('should save document with Ctrl+S', async ({ page }) => {
     // Load a test SVG
     await loadTestSVG(page);
     
-    // Setup download listener
-    const downloadPromise = page.waitForEvent('download', { timeout: 3000 });
+    // Ensure focus so key events reach document
+    await page.locator('svg-canvas').click();
     
-    // Trigger save with Ctrl+S
-    await page.keyboard.press('Control+s');
+    // Setup download listener before triggering save
+    const downloadPromise = page.waitForEvent('download', { timeout: 5000 });
+    
+    // Trigger save with Ctrl+S / Cmd+S
+    await page.keyboard.press(`${mod}+s`);
     
     // Verify download occurred
     const download = await downloadPromise;
@@ -75,17 +86,22 @@ test.describe('Keyboard Shortcuts - File Operations', () => {
     }
   });
 
-  test('should save as with Ctrl+Shift+S', async ({ page }) => {
-    // Load a test SVG
+  test('should save as with Ctrl+Shift+S', async ({ page, browserName }) => {
+    // Chromium uses showSaveFilePicker (File System Access API), which writes
+    // directly to a chosen path and does not trigger a download event.
+    test.skip(browserName === 'chromium', 'Chromium uses File System Access API for save; no download event');
+
     await loadTestSVG(page);
-    
-    // Setup download listener
-    const downloadPromise = page.waitForEvent('download', { timeout: 3000 });
-    
-    // Trigger save as with Ctrl+Shift+S
-    await page.keyboard.press('Control+Shift+s');
-    
-    // Verify download occurred
+    await page.locator('svg-canvas').click();
+
+    page.once('dialog', (dialog) => {
+      expect(dialog.type()).toBe('prompt');
+      dialog.accept('save-as-document.svg');
+    });
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 5000 });
+    await page.keyboard.press(`${mod}+Shift+s`);
+
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.svg$/);
   });
@@ -106,6 +122,9 @@ test.describe('Keyboard Shortcuts - Tool Selection', () => {
     // Verify rectangle tool is active
     await expect(rectTool).toHaveClass(/active/);
     
+    // Focus canvas so key events reach document
+    await page.locator('svg-canvas').click();
+    
     // Press 'V' to switch to select tool
     await page.keyboard.press('v');
     
@@ -122,6 +141,9 @@ test.describe('Keyboard Shortcuts - Tool Selection', () => {
     const toolPalette = page.locator('svg-tool-palette');
     const selectTool = toolPalette.locator('[data-tool="select"]');
     await expect(selectTool).toHaveClass(/active/);
+    
+    // Focus canvas so key events reach document
+    await page.locator('svg-canvas').click();
     
     // Press 'R' to switch to rectangle tool
     await page.keyboard.press('r');
@@ -140,6 +162,9 @@ test.describe('Keyboard Shortcuts - Tool Selection', () => {
     const selectTool = toolPalette.locator('[data-tool="select"]');
     await expect(selectTool).toHaveClass(/active/);
     
+    // Focus canvas so key events reach document
+    await page.locator('svg-canvas').click();
+    
     // Press 'C' to switch to circle tool
     await page.keyboard.press('c');
     
@@ -157,6 +182,9 @@ test.describe('Keyboard Shortcuts - Tool Selection', () => {
     const selectTool = toolPalette.locator('[data-tool="select"]');
     await expect(selectTool).toHaveClass(/active/);
     
+    // Focus canvas so key events reach document
+    await page.locator('svg-canvas').click();
+    
     // Press 'E' to switch to ellipse tool
     await page.keyboard.press('e');
     
@@ -173,6 +201,9 @@ test.describe('Keyboard Shortcuts - Tool Selection', () => {
     const toolPalette = page.locator('svg-tool-palette');
     const selectTool = toolPalette.locator('[data-tool="select"]');
     await expect(selectTool).toHaveClass(/active/);
+    
+    // Focus canvas so key events reach document
+    await page.locator('svg-canvas').click();
     
     // Press 'L' to switch to line tool
     await page.keyboard.press('l');

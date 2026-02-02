@@ -41,8 +41,9 @@ export class SVGEditorApp extends HTMLElement {
     // Attach keyboard shortcut manager
     keyboardShortcutManager.attach();
 
-    // Listen for save events from keyboard shortcuts
+    // Listen for file/save events from keyboard shortcuts
     document.addEventListener('editor:new', this.handleNewEvent);
+    document.addEventListener('editor:open', this.handleOpenEvent);
     document.addEventListener('editor:save', this.handleSaveEvent);
     document.addEventListener('editor:saveAs', this.handleSaveAsEvent);
   }
@@ -53,8 +54,8 @@ export class SVGEditorApp extends HTMLElement {
     // Detach keyboard shortcut manager
     keyboardShortcutManager.detach();
 
-    // Remove save event listeners
     document.removeEventListener('editor:new', this.handleNewEvent);
+    document.removeEventListener('editor:open', this.handleOpenEvent);
     document.removeEventListener('editor:save', this.handleSaveEvent);
     document.removeEventListener('editor:saveAs', this.handleSaveAsEvent);
   }
@@ -553,6 +554,11 @@ export class SVGEditorApp extends HTMLElement {
   private handleNewEvent = async () => {
     // Handle new document event from keyboard shortcut
     await this.performNew();
+  };
+
+  private handleOpenEvent = async () => {
+    // Handle open file event from keyboard shortcut (Ctrl+O / Cmd+O)
+    await this.handleFileOpen({ stopPropagation: () => {}, preventDefault: () => {} } as Event);
   };
 
   private handleSaveEvent = async () => {

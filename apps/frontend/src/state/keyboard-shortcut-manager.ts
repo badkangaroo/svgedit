@@ -11,6 +11,7 @@
 import { editorController } from './editor-controller';
 import { transformEngine } from './transform-engine';
 import { selectionManager } from './selection-manager';
+import { toolPaletteState } from '../components/svg-tool-palette';
 
 /**
  * Keyboard shortcut action types
@@ -25,8 +26,14 @@ export type ShortcutAction =
   | 'save'
   | 'saveAs'
   | 'new'
+  | 'open'
   | 'selectAll'
-  | 'deselectAll';
+  | 'deselectAll'
+  | 'toolSelect'
+  | 'toolRectangle'
+  | 'toolCircle'
+  | 'toolEllipse'
+  | 'toolLine';
 
 /**
  * Keyboard shortcut definition
@@ -180,6 +187,15 @@ export class KeyboardShortcutManager {
       preventDefault: true,
     });
 
+    // Open: Ctrl+O / Cmd+O
+    this.registerShortcut({
+      key: 'o',
+      [modifierKey]: true,
+      action: 'open',
+      description: `${this.isMac ? 'Cmd' : 'Ctrl'}+O: Open File`,
+      preventDefault: true,
+    });
+
     // Save: Ctrl+S / Cmd+S
     this.registerShortcut({
       key: 's',
@@ -214,6 +230,48 @@ export class KeyboardShortcutManager {
       action: 'deselectAll',
       description: 'Escape: Deselect all',
       preventDefault: false,
+    });
+
+    // Tool selection (no modifier - only when not typing in input)
+    this.registerShortcut({
+      key: 'v',
+      ctrl: false,
+      meta: false,
+      action: 'toolSelect',
+      description: 'V: Select tool',
+      preventDefault: true,
+    });
+    this.registerShortcut({
+      key: 'r',
+      ctrl: false,
+      meta: false,
+      action: 'toolRectangle',
+      description: 'R: Rectangle tool',
+      preventDefault: true,
+    });
+    this.registerShortcut({
+      key: 'c',
+      ctrl: false,
+      meta: false,
+      action: 'toolCircle',
+      description: 'C: Circle tool',
+      preventDefault: true,
+    });
+    this.registerShortcut({
+      key: 'e',
+      ctrl: false,
+      meta: false,
+      action: 'toolEllipse',
+      description: 'E: Ellipse tool',
+      preventDefault: true,
+    });
+    this.registerShortcut({
+      key: 'l',
+      ctrl: false,
+      meta: false,
+      action: 'toolLine',
+      description: 'L: Line tool',
+      preventDefault: true,
     });
   }
 
@@ -397,11 +455,29 @@ export class KeyboardShortcutManager {
         case 'new':
           this.handleNew();
           break;
+        case 'open':
+          this.handleOpen();
+          break;
         case 'save':
           this.handleSave();
           break;
         case 'saveAs':
           this.handleSaveAs();
+          break;
+        case 'toolSelect':
+          toolPaletteState.activeTool.set('select');
+          break;
+        case 'toolRectangle':
+          toolPaletteState.activeTool.set('rectangle');
+          break;
+        case 'toolCircle':
+          toolPaletteState.activeTool.set('circle');
+          break;
+        case 'toolEllipse':
+          toolPaletteState.activeTool.set('ellipse');
+          break;
+        case 'toolLine':
+          toolPaletteState.activeTool.set('line');
           break;
         case 'selectAll':
           this.handleSelectAll();
@@ -533,6 +609,17 @@ export class KeyboardShortcutManager {
   }
 
   /**
+   * Handle open file action
+   */
+  private handleOpen(): void {
+    const event = new CustomEvent('editor:open', {
+      bubbles: true,
+      composed: true,
+    });
+    document.dispatchEvent(event);
+  }
+
+  /**
    * Handle save action
    * 
    * Note: This is a placeholder that dispatches a custom event.
@@ -606,7 +693,10 @@ export class KeyboardShortcutManager {
         ['selectAll', 'deselectAll', 'delete'].includes(s.action)
       ),
       'File': this.shortcuts.filter(s => 
-        ['new', 'save', 'saveAs'].includes(s.action)
+        ['new', 'open', 'save', 'saveAs'].includes(s.action)
+      ),
+      'Tools': this.shortcuts.filter(s => 
+        ['toolSelect', 'toolRectangle', 'toolCircle', 'toolEllipse', 'toolLine'].includes(s.action)
       ),
     };
   }
