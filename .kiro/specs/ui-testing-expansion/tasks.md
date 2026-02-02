@@ -253,7 +253,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Element Registry O(1) lookups ensure performance at scale
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 11.3_
   
-  - [ ]* 18.2 Document performance baselines
+  - [x] 18.2 Document performance baselines
     - Record baseline metrics for each performance test
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
