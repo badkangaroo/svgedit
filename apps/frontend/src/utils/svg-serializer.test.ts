@@ -128,6 +128,31 @@ describe('SVGSerializer', () => {
   });
   
   describe('Editor attribute cleanup', () => {
+    it('should remove data-uuid by default', () => {
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('data-uuid', '123e4567-e89b-12d3-a456-426614174000');
+      rect.setAttribute('x', '10');
+      
+      const result = serializer.serialize(rect);
+      
+      // data-uuid should be removed by default
+      expect(result).toBe('<rect x="10" />\n');
+      expect(result).not.toContain('data-uuid');
+    });
+    
+    it('should preserve data-uuid when keepUUID is true', () => {
+      const serializer = new SVGSerializer({ keepUUID: true });
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('data-uuid', '123e4567-e89b-12d3-a456-426614174000');
+      rect.setAttribute('x', '10');
+      
+      const result = serializer.serialize(rect);
+      
+      // data-uuid should be preserved
+      expect(result).toBe('<rect data-uuid="123e4567-e89b-12d3-a456-426614174000" x="10" />\n');
+      expect(result).toContain('data-uuid');
+    });
+    
     it('should remove generated IDs (svg-node-*)', () => {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('id', 'svg-node-123');
