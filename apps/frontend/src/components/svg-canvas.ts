@@ -799,7 +799,8 @@ export class SVGCanvas extends HTMLElement {
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     element.setAttribute('id', tempId);
     
-    // Add to SVG
+    // Add to SVG (element already has data-uuid from createPrimitiveElement)
+    const newElementUUID = element.getAttribute('data-uuid');
     svgElement.appendChild(element);
     
     // Update document state
@@ -807,6 +808,13 @@ export class SVGCanvas extends HTMLElement {
     const parseResult = svgParser.parse(serializedSVG);
     
     if (parseResult.success && parseResult.document) {
+      // Find the new element in the parsed document (by temp ID / data-original-id)
+      const parsedNewElement = parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
+        parseResult.document.querySelector(`#${tempId}`);
+      // Ensure it has data-uuid so registry and tests can find it (DOMParser may not preserve it)
+      if (parsedNewElement && newElementUUID) {
+        parsedNewElement.setAttribute('data-uuid', newElementUUID);
+      }
       // Create undo operation
       const operation: Operation = {
         type: 'create',
@@ -851,12 +859,8 @@ export class SVGCanvas extends HTMLElement {
       );
       
       // Auto-select the newly created element (Requirement 6.5)
-      // Find the element by its temporary ID (stored as data-original-id after parsing)
-      const parsedElement = parseResult.document.querySelector(`[data-original-id="${tempId}"]`) ||
-                           parseResult.document.querySelector(`#${tempId}`);
-      
-      if (parsedElement) {
-        const finalId = parsedElement.getAttribute('id');
+      if (parsedNewElement) {
+        const finalId = parsedNewElement.getAttribute('id');
         
         if (finalId) {
           // Delay selection to allow document state to propagate

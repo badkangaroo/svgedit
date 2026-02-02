@@ -126,8 +126,8 @@ export async function drawPrimitive(
   await page.mouse.move(absEndX, absEndY, { steps: 10 }); // Use steps for smoother drag
   await page.mouse.up();
   
-  // Wait for the primitive to be created and rendered
-  await page.waitForTimeout(200);
+  // Wait for primitive creation, setDocument, and canvas re-render (including data-uuid)
+  await page.waitForTimeout(400);
 }
 
 /**
@@ -221,6 +221,32 @@ export async function getElementCountWithUUID(page: Page, elementType: string): 
     const elements = svg.querySelectorAll(`${type}[data-uuid]`);
     return elements.length;
   }, elementType);
+}
+
+/**
+ * Wait for the count of elements with data-uuid to reach the expected value.
+ * Polls until the document state has updated and the canvas has re-rendered
+ * with the new element (and its data-uuid) from the registry.
+ *
+ * @param page - Playwright page object
+ * @param elementType - Type of element (e.g., 'rect', 'circle', 'ellipse', 'line')
+ * @param expectedCount - Expected count to wait for
+ * @param timeoutMs - Max time to wait (default 5000)
+ */
+export async function waitForElementCountWithUUID(
+  page: Page,
+  elementType: string,
+  expectedCount: number,
+  timeoutMs: number = 5000
+): Promise<number> {
+  const deadline = Date.now() + timeoutMs;
+  let count = 0;
+  while (Date.now() < deadline) {
+    count = await getElementCountWithUUID(page, elementType);
+    if (count >= expectedCount) return count;
+    await page.waitForTimeout(100);
+  }
+  return count;
 }
 
 /**

@@ -14,7 +14,8 @@ import {
   verifyToolActive,
   getElementCount,
   getElementCountWithUUID,
-  getLastElementUUID
+  getLastElementUUID,
+  waitForElementCountWithUUID,
 } from '../../helpers/tool-helpers';
 import { waitForEditorReady, initializeNewDocument } from '../../helpers/svg-helpers';
 
@@ -47,17 +48,17 @@ test.describe('Tool Palette', () => {
   });
 
   test('should create rectangle with drag', async ({ page }) => {
-    // Get initial rectangle count
+    // Get initial rectangle count (elements with data-uuid)
     const initialCount = await getElementCountWithUUID(page, 'rect');
     
     // Draw a rectangle
     await drawPrimitive(page, 'rectangle', 100, 100, 200, 200);
     
-    // Verify rectangle was created
+    // Verify rectangle was created (visible in canvas)
     await verifyPrimitiveCreated(page, 'rect');
     
-    // Verify count increased by exactly 1
-    const newCount = await getElementCountWithUUID(page, 'rect');
+    // Wait for document state to update and canvas to show the new rect with data-uuid
+    const newCount = await waitForElementCountWithUUID(page, 'rect', initialCount + 1, 5000);
     expect(newCount).toBe(initialCount + 1);
     
     // Get the UUID of the newly created rectangle
@@ -78,17 +79,10 @@ test.describe('Tool Palette', () => {
   });
 
   test('should create circle with drag', async ({ page }) => {
-    // Get initial circle count
     const initialCount = await getElementCountWithUUID(page, 'circle');
-    
-    // Draw a circle
     await drawPrimitive(page, 'circle', 150, 150, 250, 250);
-    
-    // Verify circle was created
     await verifyPrimitiveCreated(page, 'circle');
-    
-    // Verify count increased
-    const newCount = await getElementCountWithUUID(page, 'circle');
+    const newCount = await waitForElementCountWithUUID(page, 'circle', initialCount + 1, 5000);
     expect(newCount).toBe(initialCount + 1);
     
     // Verify the circle has expected attributes
@@ -106,17 +100,10 @@ test.describe('Tool Palette', () => {
   });
 
   test('should create ellipse with drag', async ({ page }) => {
-    // Get initial ellipse count
     const initialCount = await getElementCountWithUUID(page, 'ellipse');
-    
-    // Draw an ellipse
     await drawPrimitive(page, 'ellipse', 100, 150, 250, 200);
-    
-    // Verify ellipse was created
     await verifyPrimitiveCreated(page, 'ellipse');
-    
-    // Verify count increased
-    const newCount = await getElementCountWithUUID(page, 'ellipse');
+    const newCount = await waitForElementCountWithUUID(page, 'ellipse', initialCount + 1, 5000);
     expect(newCount).toBe(initialCount + 1);
     
     // Verify the ellipse has expected attributes
@@ -134,17 +121,10 @@ test.describe('Tool Palette', () => {
   });
 
   test('should create line with drag', async ({ page }) => {
-    // Get initial line count
     const initialCount = await getElementCountWithUUID(page, 'line');
-    
-    // Draw a line
     await drawPrimitive(page, 'line', 100, 100, 300, 200);
-    
-    // Verify line was created
     await verifyPrimitiveCreated(page, 'line');
-    
-    // Verify count increased
-    const newCount = await getElementCountWithUUID(page, 'line');
+    const newCount = await waitForElementCountWithUUID(page, 'line', initialCount + 1, 5000);
     expect(newCount).toBe(initialCount + 1);
     
     // Verify the line has expected attributes
@@ -268,8 +248,8 @@ test.describe('Tool Palette', () => {
     
     expect(previewAfterDrag).toBe(false); // Preview should be removed
     
-    // Verify permanent element was created
-    const finalCount = await getElementCountWithUUID(page, 'rect');
+    // Verify permanent element was created (with data-uuid after document state update)
+    const finalCount = await waitForElementCountWithUUID(page, 'rect', initialCount + 1, 5000);
     expect(finalCount).toBe(initialCount + 1);
   });
 
