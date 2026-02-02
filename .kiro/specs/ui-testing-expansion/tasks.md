@@ -124,7 +124,7 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Attribute inspector operates on selected UUID via Element Registry
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 11.1, 11.4_
   
-  - [ ]* 9.2 Run attribute editing tests across all browsers
+  - [x] 9.2 Run attribute editing tests across all browsers
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
@@ -142,11 +142,11 @@ This task list implements comprehensive Playwright UI tests for the SVG editor, 
     - Use `getLastCreatedElementUUID()` helper for assertions
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 11.3_
   
-  - [ ]* 10.2 Run tool palette tests across all browsers
+  - [x] 10.2 Run tool palette tests across all browsers
     - Verify tests pass in Chromium, Firefox, and WebKit
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8_
 
-- [ ] 11. Checkpoint - Verify core functionality tests
+- [x] 11. Checkpoint - Verify core functionality tests
   - Ensure all tests pass, ask the user if questions arise.
   - Verify all helpers correctly use `data-uuid` for element identification
 
