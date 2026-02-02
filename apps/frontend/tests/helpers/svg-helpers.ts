@@ -3,7 +3,7 @@
  */
 
 import type { Page } from '@playwright/test';
-import { generateTestSVG } from './test-data-generators';
+import { generateTestSVG, generateSimpleTestSVG } from './test-data-generators';
 
 /**
  * Load the test.svg file from the apps/frontend directory
@@ -11,6 +11,20 @@ import { generateTestSVG } from './test-data-generators';
 export async function loadTestSVG(page: Page): Promise<void> {
   const svgContent = generateTestSVG();
   await loadSVGContent(page, svgContent);
+  
+  // Wait for hierarchy to populate - handled by loadSVGContent now
+  // Additional wait to ensure everything is settled
+  await page.waitForTimeout(500);
+}
+
+/**
+ * Load the minimal simple-test.svg content for debugging hierarchy/parsing.
+ * Use when verifying that the app can read a clean SVG and the hierarchy view updates.
+ */
+export async function loadSimpleTestSVG(page: Page): Promise<void> {
+  const svgContent = generateSimpleTestSVG();
+  await loadSVGContent(page, svgContent);
+  await page.waitForTimeout(300);
 }
 
 /**
@@ -18,13 +32,13 @@ export async function loadTestSVG(page: Page): Promise<void> {
  */
 export async function loadSVGContent(page: Page, content: string): Promise<void> {
   // Use the file manager to load SVG content programmatically
-  await page.evaluate((svg) => {
+  await page.evaluate(async (svg) => {
     // Access the file manager and load the content
     const { documentStateUpdater } = (window as any);
     const { SVGParser } = (window as any);
     
-    console.log('loadSVGContent: documentStateUpdater available?', !!documentStateUpdater);
-    console.log('loadSVGContent: SVGParser available?', !!SVGParser);
+    if (!documentStateUpdater) throw new Error('documentStateUpdater not found on window');
+    if (!SVGParser) throw new Error('SVGParser not found on window');
     
     if (documentStateUpdater && SVGParser) {
       const parser = new SVGParser();
@@ -32,6 +46,45 @@ export async function loadSVGContent(page: Page, content: string): Promise<void>
       
       if (result.success && result.document) {
         documentStateUpdater.setDocument(result.document, result.tree, svg);
+
+        // Yield to microtask queue so reactive effects run (hierarchy panel subscribes to documentTree)
+        await new Promise<void>((resolve) => queueMicrotask(resolve));
+
+        // Force refresh as safety net if effect did not run
+        const hierarchy = document.querySelector('svg-hierarchy-panel');
+        if (hierarchy && typeof (hierarchy as any).refresh === 'function') {
+          (hierarchy as any).refresh();
+        }
+
+        // Wait for hierarchy to populate (up to 2s)
+        const start = Date.now();
+        const checkHierarchy = () => {
+          const h = document.querySelector('svg-hierarchy-panel');
+          if (h?.shadowRoot) {
+            const nodes = h.shadowRoot.querySelectorAll('.node-content');
+            if (nodes.length > 0) return true;
+          }
+          return false;
+        };
+
+        while (!checkHierarchy() && Date.now() - start < 2000) {
+          await new Promise((r) => setTimeout(r, 50));
+        }
+
+        if (!checkHierarchy()) {
+          const h = document.querySelector('svg-hierarchy-panel') as HTMLElement;
+          const debugLog = h?.shadowRoot?.querySelector('#debug-log');
+          const debugInfo = {
+            lastUpdate: h?.dataset?.lastUpdate,
+            treeSize: h?.dataset?.treeSize,
+            debugLog: debugLog?.textContent,
+          };
+          throw new Error(
+            `Hierarchy not populated in loadSVGContent. Debug: ${JSON.stringify(debugInfo)}`
+          );
+        }
+      } else {
+        throw new Error(`SVG Parsing failed: ${JSON.stringify(result.errors)}`);
       }
     }
   }, content);

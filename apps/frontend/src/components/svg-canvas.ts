@@ -10,6 +10,7 @@
 
 import { effect } from '../state/signals';
 import { documentState, documentStateUpdater } from '../state/document-state';
+import { elementRegistry } from '../state/element-registry';
 import { selectionManager } from '../state/selection-manager';
 import { toolPaletteState } from './svg-tool-palette';
 import { createPrimitiveElement } from '../utils/primitive-tools-simple';
@@ -441,11 +442,8 @@ export class SVGCanvas extends HTMLElement {
 
     if (!hoveredUUID) return;
 
-    // Find the hovered element
-    const doc = documentState.svgDocument.get();
-    if (!doc) return;
-
-    const hoveredElement = doc.querySelector(`[data-uuid="${hoveredUUID}"]`) as SVGElement | null;
+    // Find the hovered element via ElementRegistry
+    const hoveredElement = elementRegistry.getElement(hoveredUUID);
     if (!hoveredElement) return;
 
     // Don't show hover if element is already selected

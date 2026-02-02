@@ -174,7 +174,7 @@ export class SVGParser {
     for (let i = 0; i < element.childNodes.length; i++) {
       const child = element.childNodes[i];
       // Only process element nodes (nodeType 1), skip text nodes, comments, etc.
-      if (child.nodeType === 1 && child instanceof Element) {
+      if (child.nodeType === 1) {
         const childNode = this.buildDocumentNode(child as SVGElement);
         children.push(childNode);
       }

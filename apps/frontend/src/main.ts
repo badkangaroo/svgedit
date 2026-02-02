@@ -15,12 +15,24 @@ import './components/svg-tool-palette';
 
 import { SVGParser } from './utils/svg-parser';
 import { documentStateUpdater, documentState } from './state/document-state';
+import { elementRegistry } from './state/element-registry';
 import { selectionManager } from './state/selection-manager';
+
+// Wire ElementRegistry to sync rawSVG when attributes change
+elementRegistry.setOnAttributeChange(() => {
+  const doc = documentState.svgDocument.get();
+  if (doc) {
+    documentStateUpdater.updateRawSVG(
+      new XMLSerializer().serializeToString(doc)
+    );
+  }
+});
 
 // Expose internal state for E2E testing
 (window as any).SVGParser = SVGParser;
 (window as any).documentStateUpdater = documentStateUpdater;
 (window as any).documentState = documentState;
+(window as any).elementRegistry = elementRegistry;
 (window as any).selectionManager = selectionManager;
 
 console.log('SVG Editor initializing... DEBUG_VERSION_1');

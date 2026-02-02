@@ -9,8 +9,11 @@
  */
 
 import { Operation } from '../types';
-import { documentState } from './document-state';
+import { documentState, documentStateUpdater } from './document-state';
+import { elementRegistry } from './element-registry';
 import { loadingIndicator } from '../utils/loading-indicator';
+import { svgParser } from '../utils/svg-parser';
+import { svgSerializer } from '../utils/svg-serializer';
 
 /**
  * Count total nodes in document tree
@@ -113,12 +116,12 @@ export class TransformEngine {
       transform?: string | null;
     }> = [];
     
-    // Get elements and store their original states
+    // Get elements via ElementRegistry (supports both IDs and UUIDs)
     const elements: SVGElement[] = [];
     for (const id of elementIds) {
-      const element = doc.querySelector(`[id="${id}"]`) as SVGElement | null;
+      const element = this.resolveElement(id);
       if (!element) {
-        console.warn(`Element with id "${id}" not found`);
+        console.warn(`Element "${id}" not found`);
         continue;
       }
       elements.push(element);
@@ -500,87 +503,72 @@ export class TransformEngine {
   }
   
   /**
-   * Delete elements in main thread (for smaller documents)
+   * Delete elements in main thread (for smaller documents).
+   * Re-serializes and re-parses after delete to keep documentTree and hierarchy in sync.
    */
   private deleteInMainThread(elementIds: string[]): Operation {
     const doc = documentState.svgDocument.get();
-    
-    if (!doc) {
-      throw new Error('No document loaded');
-    }
-    
-    // Store information needed to restore deleted elements
-    const deletedElements: Array<{
-      element: SVGElement;
-      parent: Node;
-      nextSibling: Node | null;
-    }> = [];
-    
-    // Get elements and store their parent/sibling information for restoration
+    if (!doc) throw new Error('No document loaded');
+
+    // Serialize BEFORE delete for undo
+    const originalSerialized = svgSerializer.serialize(doc, { keepUUID: true });
+
+    // Get elements and remove them
+    const elementsToRemove: SVGElement[] = [];
     for (const id of elementIds) {
-      const element = doc.querySelector(`[id="${id}"]`) as SVGElement | null;
-      if (!element) {
-        console.warn(`Element with id "${id}" not found`);
-        continue;
-      }
-      
-      const parent = element.parentNode;
-      if (!parent) {
-        console.warn(`Element with id "${id}" has no parent`);
-        continue;
-      }
-      
-      // Store element, parent, and next sibling for restoration
-      deletedElements.push({
-        element: element.cloneNode(true) as SVGElement, // Clone for restoration
-        parent,
-        nextSibling: element.nextSibling,
-      });
+      const element = this.resolveElement(id);
+      if (element) elementsToRemove.push(element);
     }
-    
-    if (deletedElements.length === 0) {
+    if (elementsToRemove.length === 0) {
       throw new Error('No valid elements found for delete operation');
     }
-    
-    // Undo function: restore deleted elements
-    const undo = () => {
-      for (const { element, parent, nextSibling } of deletedElements) {
-        // Check if nextSibling is still in the parent (it might have been deleted too)
-        if (nextSibling && nextSibling.parentNode === parent) {
-          parent.insertBefore(element, nextSibling);
-        } else {
-          parent.appendChild(element);
-        }
-      }
-    };
-    
-    // Redo function: remove the restored elements
-    const redo = () => {
-      for (const { element } of deletedElements) {
-        if (element.parentNode) {
-          element.parentNode.removeChild(element);
-        }
-      }
-    };
-    
-    // Apply the delete immediately by removing the original elements
-    for (const id of elementIds) {
-      const element = doc.querySelector(`[id="${id}"]`) as SVGElement | null;
-      if (element && element.parentNode) {
+
+    // Remove elements from DOM
+    for (const element of elementsToRemove) {
+      if (element.parentNode) {
         element.parentNode.removeChild(element);
       }
     }
-    
-    // Create and return the operation
-    const description = elementIds.length === 1
-      ? `Delete element ${elementIds[0]}`
-      : `Delete ${elementIds.length} elements`;
-    
+
+    // Serialize after delete, parse, and update document state (keeps hierarchy in sync)
+    const newSerialized = svgSerializer.serialize(doc, { keepUUID: true });
+    const parseResult = svgParser.parse(newSerialized);
+    if (parseResult.success && parseResult.document) {
+      documentStateUpdater.setDocument(
+        parseResult.document,
+        parseResult.tree,
+        newSerialized
+      );
+    }
+
+    const description =
+      elementIds.length === 1
+        ? `Delete element ${elementIds[0]}`
+        : `Delete ${elementIds.length} elements`;
+
     return {
       type: 'delete',
       timestamp: Date.now(),
-      undo,
-      redo,
+      undo: () => {
+        const undoResult = svgParser.parse(originalSerialized);
+        if (undoResult.success && undoResult.document) {
+          documentStateUpdater.setDocument(
+            undoResult.document,
+            undoResult.tree,
+            originalSerialized
+          );
+        }
+      },
+      redo: () => {
+        const redoResult = svgParser.parse(newSerialized);
+        if (redoResult.success && redoResult.document) {
+          documentStateUpdater.setDocument(
+            redoResult.document,
+            redoResult.tree,
+            newSerialized
+          );
+        }
+      },
       description,
     };
   }
@@ -595,28 +583,28 @@ export class TransformEngine {
       throw new Error('No document loaded');
     }
     
-    // Store original SVG for undo
-    const serializer = new XMLSerializer();
-    const originalSVG = serializer.serializeToString(doc);
-    
+    // Store original SVG for undo (use serializer with keepUUID for consistency)
+    const originalSVG = svgSerializer.serialize(doc, { keepUUID: true });
+
     // Create a synchronous operation that will be executed asynchronously
     let transformedSVG: string | null = null;
     let isComplete = false;
-    
+
     // Start the worker transformation
     this.executeWorkerTransform('delete', elementIds, {})
       .then((result) => {
         transformedSVG = result;
         isComplete = true;
-        
-        // Re-parse and update the document
-        const parser = new DOMParser();
-        const newDoc = parser.parseFromString(result, 'image/svg+xml');
-        const newSvgElement = newDoc.documentElement as unknown as SVGElement;
-        
-        // Update document state
-        documentState.svgDocument.set(newSvgElement);
-        documentState.rawSVG.set(result);
+
+        // Re-parse and update document state (keeps documentTree and hierarchy in sync)
+        const parseResult = svgParser.parse(result);
+        if (parseResult.success && parseResult.document) {
+          documentStateUpdater.setDocument(
+            parseResult.document,
+            parseResult.tree,
+            result
+          );
+        }
       })
       .catch((error) => {
         console.error('Worker transformation failed:', error);
@@ -632,29 +620,52 @@ export class TransformEngine {
       type: 'delete',
       timestamp: Date.now(),
       undo: () => {
-        // Restore original SVG
-        const parser = new DOMParser();
-        const restoredDoc = parser.parseFromString(originalSVG, 'image/svg+xml');
-        const restoredSvgElement = restoredDoc.documentElement as unknown as SVGElement;
-        
-        documentState.svgDocument.set(restoredSvgElement);
-        documentState.rawSVG.set(originalSVG);
+        const undoResult = svgParser.parse(originalSVG);
+        if (undoResult.success && undoResult.document) {
+          documentStateUpdater.setDocument(
+            undoResult.document,
+            undoResult.tree,
+            originalSVG
+          );
+        }
       },
       redo: () => {
-        // Reapply transformed SVG if available
         if (transformedSVG) {
-          const parser = new DOMParser();
-          const redoDoc = parser.parseFromString(transformedSVG, 'image/svg+xml');
-          const redoSvgElement = redoDoc.documentElement as unknown as SVGElement;
-          
-          documentState.svgDocument.set(redoSvgElement);
-          documentState.rawSVG.set(transformedSVG);
+          const redoResult = svgParser.parse(transformedSVG);
+          if (redoResult.success && redoResult.document) {
+            documentStateUpdater.setDocument(
+              redoResult.document,
+              redoResult.tree,
+              transformedSVG
+            );
+          }
         }
       },
       description,
     };
   }
   
+  /**
+   * Resolve an identifier (ID or UUID) to an SVG element using ElementRegistry.
+   * Falls back to document querySelector when registry is not populated (e.g. tests).
+   */
+  private resolveElement(identifier: string): SVGElement | null {
+    let el = elementRegistry.getElement(identifier);
+    if (el) return el;
+    const uuid = elementRegistry.getUUIDById(identifier);
+    if (uuid) {
+      el = elementRegistry.getElement(uuid);
+      if (el) return el;
+    }
+    // Fallback when registry not populated (e.g. unit tests)
+    const doc = documentState.svgDocument.get();
+    if (!doc) return null;
+    return (
+      (doc.querySelector(`[id="${identifier}"]`) as SVGElement | null) ??
+      (doc.querySelector(`[data-uuid="${identifier}"]`) as SVGElement | null)
+    );
+  }
+
   /**
    * Helper to set or remove an attribute based on value
    */

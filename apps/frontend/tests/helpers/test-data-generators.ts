@@ -78,8 +78,19 @@ export function generateLargeSVG(elementCount: number): string {
 }
 
 /**
- * Generate an SVG with specific attributes for testing attribute editing
+ * Generate a simple SVG for basic testing
  * 
+ * @returns SVG string content
+ */
+export function generateSimpleTestSVG(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <rect id="simple-rect" x="10" y="10" width="80" height="80" fill="blue" stroke="black"/>
+</svg>`;
+}
+
+/**
+ * Generate SVG for attribute-editing tests
+ *
  * @returns SVG string content
  */
 export function generateAttributeTestSVG(): string {

@@ -377,12 +377,12 @@ describe('TransformEngine', () => {
       expect(rect.getAttribute('y')).toBe('40');
       
       // Should warn about the nonexistent element
-      expect(consoleWarnSpy).toHaveBeenCalledWith('Element with id "nonexistent" not found');
-      
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Element "nonexistent" not found');
+
       consoleWarnSpy.mockRestore();
     });
   });
-  
+
   describe('move() - edge cases', () => {
     it('should handle fractional delta values', () => {
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -471,9 +471,10 @@ describe('TransformEngine', () => {
       
       // Delete the rectangle
       const operation = engine.delete(['rect1']);
-      
-      // Check that element was removed
-      expect(mockDocument.querySelector('[id="rect1"]')).toBeNull();
+
+      // Check that element was removed (delete replaces document via setDocument)
+      const doc = documentState.svgDocument.get();
+      expect(doc?.querySelector('[id="rect1"]')).toBeNull();
       
       // Check operation properties
       expect(operation.type).toBe('delete');
@@ -593,10 +594,10 @@ describe('TransformEngine', () => {
       rect.setAttribute('height', '50');
       mockDocument.appendChild(rect);
       
-      const operation = engine.delete(['rect1']);
-      
+      const operation =       engine.delete(['rect1']);
+
       // Element should be deleted
-      expect(mockDocument.querySelector('[id="rect1"]')).toBeNull();
+      expect(documentState.svgDocument.get()?.querySelector('[id="rect1"]')).toBeNull();
       
       // Undo the deletion
       operation.undo();

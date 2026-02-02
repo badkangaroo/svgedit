@@ -28,6 +28,10 @@ export {
   editorController,
 } from './editor-controller';
 export {
+  ElementRegistry,
+  elementRegistry,
+} from './element-registry';
+export {
   TransformEngine,
   transformEngine,
 } from './transform-engine';

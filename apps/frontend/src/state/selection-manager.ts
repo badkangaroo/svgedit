@@ -10,6 +10,7 @@
 
 import { effect } from './signals';
 import { documentState, documentStateUpdater } from './document-state';
+import { elementRegistry } from './element-registry';
 import type { DocumentNode } from '../types';
 
 /**
@@ -142,23 +143,10 @@ export class SelectionManager {
   }
 
   /**
-   * Helper to convert IDs to UUIDs
+   * Helper to convert IDs to UUIDs (uses ElementRegistry)
    */
   private idsToUUIDs(ids: string[]): string[] {
-    const doc = documentState.svgDocument.get();
-    if (!doc) return [];
-    
-    const uuids: string[] = [];
-    ids.forEach(id => {
-      const element = doc.querySelector(`[id="${id}"]`);
-      if (element) {
-        const uuid = element.getAttribute('data-uuid');
-        if (uuid) {
-          uuids.push(uuid);
-        }
-      }
-    });
-    return uuids;
+    return elementRegistry.idsToUUIDs(ids);
   }
 
   /**

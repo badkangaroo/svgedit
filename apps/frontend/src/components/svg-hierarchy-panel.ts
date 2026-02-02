@@ -51,6 +51,9 @@ export class SVGHierarchyPanel extends HTMLElement {
   }
 
   connectedCallback() {
+    // Expose documentState for testing/debugging
+    (this as any)._documentState = documentState;
+    
     this.render();
     this.setupEffects();
     this.registerWithSelectionManager();
@@ -246,6 +249,7 @@ export class SVGHierarchyPanel extends HTMLElement {
 
       <div class="scroll-container" id="scroll-container">
         <div class="hierarchy-header">Document Structure</div>
+        <div id="debug-log" style="display:none"></div>
         <div class="hierarchy-container" id="tree-container">
           <!-- Tree will be rendered here -->
         </div>
@@ -269,8 +273,12 @@ export class SVGHierarchyPanel extends HTMLElement {
   private setupEffects() {
     // Effect: Update tree when document changes
     const documentEffect = effect(() => {
-      const tree = documentState.documentTree.get();
-      this.updateTree(tree);
+      try {
+        const tree = documentState.documentTree.get();
+        this.updateTree(tree);
+      } catch (error) {
+        console.error('Error updating tree:', error);
+      }
     });
     this.disposeEffects.push(documentEffect);
 
@@ -286,6 +294,17 @@ export class SVGHierarchyPanel extends HTMLElement {
    * Update the tree view with new document structure
    */
   private updateTree(tree: DocumentNode[]) {
+    // Ensure container exists
+    if (!this.treeContainer && this.shadowRoot) {
+      this.treeContainer = this.shadowRoot.querySelector('#tree-container');
+    }
+    
+    const debug = this.shadowRoot?.querySelector('#debug-log');
+    if (debug) debug.textContent = `Update called. Tree len: ${tree ? tree.length : 'null'}. Container: ${!!this.treeContainer}`;
+
+    this.dataset.lastUpdate = Date.now().toString();
+    this.dataset.treeSize = tree.length.toString();
+    
     if (!this.treeContainer) return;
 
     // Clear existing tree
@@ -807,6 +826,14 @@ export class SVGHierarchyPanel extends HTMLElement {
    */
   public getVirtualizationThreshold(): number {
     return this.VIRTUALIZATION_THRESHOLD;
+  }
+
+  /**
+   * Force refresh the tree view
+   */
+  public refresh() {
+    const tree = documentState.documentTree.get();
+    this.updateTree(tree);
   }
 }
 

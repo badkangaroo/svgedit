@@ -85,45 +85,45 @@
   - [x] 5.2.6 Run tests across all browsers
 
 ### 6. Keyboard Shortcuts Tests
-- [ ] 6.1 Create `tests/e2e/playwright/keyboard-shortcuts.spec.ts`
-  - [ ] 6.1.1 Write test: "should create new document with Ctrl+N"
-  - [ ] 6.1.2 Write test: "should trigger open dialog with Ctrl+O"
-  - [ ] 6.1.3 Write test: "should save document with Ctrl+S"
-  - [ ] 6.1.4 Write test: "should save as with Ctrl+Shift+S"
-  - [ ] 6.1.5 Write test: "should switch to select tool with 'V' key"
-  - [ ] 6.1.6 Write test: "should switch to rectangle tool with 'R' key"
-  - [ ] 6.1.7 Write test: "should switch to circle tool with 'C' key"
-  - [ ] 6.1.8 Write test: "should switch to ellipse tool with 'E' key"
-  - [ ] 6.1.9 Write test: "should switch to line tool with 'L' key"
-  - [ ] 6.1.10 Run tests across all browsers
+- [x] 6.1 Create `tests/e2e/playwright/keyboard-shortcuts.spec.ts`
+  - [x] 6.1.1 Write test: "should create new document with Ctrl+N"
+  - [x] 6.1.2 Write test: "should trigger open dialog with Ctrl+O"
+  - [x] 6.1.3 Write test: "should save document with Ctrl+S"
+  - [x] 6.1.4 Write test: "should save as with Ctrl+Shift+S"
+  - [x] 6.1.5 Write test: "should switch to select tool with 'V' key"
+  - [x] 6.1.6 Write test: "should switch to rectangle tool with 'R' key"
+  - [x] 6.1.7 Write test: "should switch to circle tool with 'C' key"
+  - [x] 6.1.8 Write test: "should switch to ellipse tool with 'E' key"
+  - [x] 6.1.9 Write test: "should switch to line tool with 'L' key"
+  - [x] 6.1.10 Run tests across all browsers
 
 ### 7. File Operations Tests
-- [ ] 7.1 Create `tests/e2e/playwright/file-operations.spec.ts`
-  - [ ] 7.1.1 Write test: "should open file menu on click"
-  - [ ] 7.1.2 Write test: "should close file menu on outside click"
-  - [ ] 7.1.3 Write test: "should show all menu items (New, Open, Save, Save As)"
-  - [ ] 7.1.4 Write test: "should create new document from menu"
-  - [ ] 7.1.5 Write test: "should save document and download file"
-  - [ ] 7.1.6 Write test: "should save edited document with changes"
-  - [ ] 7.1.7 Write test: "should verify downloaded file contains correct SVG"
-  - [ ] 7.1.8 Run tests across all browsers
+- [x] 7.1 Create `tests/e2e/playwright/file-operations.spec.ts`
+  - [x] 7.1.1 Write test: "should open file menu on click"
+  - [x] 7.1.2 Write test: "should close file menu on outside click"
+  - [x] 7.1.3 Write test: "should show all menu items (New, Open, Save, Save As)"
+  - [x] 7.1.4 Write test: "should create new document from menu"
+  - [x] 7.1.5 Write test: "should save document and download file"
+  - [x] 7.1.6 Write test: "should save edited document with changes"
+  - [x] 7.1.7 Write test: "should verify downloaded file contains correct SVG"
+  - [x] 7.1.8 Run tests across all browsers
 
 
 
 ## Phase 3: Panel Interactions (Priority: Medium)
 
 ### 8. Hierarchy Panel Tests
-- [ ] 8.1 Create `tests/e2e/playwright/hierarchy-panel.spec.ts`
-  - [ ] 8.1.1 Write test: "should select element from hierarchy click"
-  - [ ] 8.1.2 Write test: "should expand node on toggle click"
-  - [ ] 8.1.3 Write test: "should collapse node on toggle click"
-  - [ ] 8.1.4 Write test: "should show children when node expanded"
-  - [ ] 8.1.5 Write test: "should update hierarchy when element created"
-  - [ ] 8.1.6 Write test: "should update hierarchy when element deleted"
-  - [ ] 8.1.7 Write test: "should enable virtual scrolling for large documents (>1000 nodes)"
-  - [ ] 8.1.8 Write test: "should show performance indicator for virtual scrolling"
-  - [ ] 8.1.9 Write test: "should scroll to selected node in virtual mode"
-  - [ ] 8.1.10 Run tests across all browsers
+- [x] 8.1 Create `tests/e2e/playwright/hierarchy-panel.spec.ts`
+  - [x] 8.1.1 Write test: "should select element from hierarchy click"
+  - [x] 8.1.2 Write test: "should expand node on toggle click"
+  - [x] 8.1.3 Write test: "should collapse node on toggle click"
+  - [x] 8.1.4 Write test: "should show children when node expanded"
+  - [x] 8.1.5 Write test: "should update hierarchy when element created"
+  - [x] 8.1.6 Write test: "should update hierarchy when element deleted"
+  - [x] 8.1.7 Write test: "should enable virtual scrolling for large documents (>1000 nodes)"
+  - [x] 8.1.8 Write test: "should show performance indicator for virtual scrolling"
+  - [x] 8.1.9 Write test: "should scroll to selected node in virtual mode"
+  - [x] 8.1.10 Run tests across all browsers
 
 ### 9. Raw SVG Panel Tests
 - [ ] 9.1 Create `tests/e2e/playwright/raw-svg-panel.spec.ts`

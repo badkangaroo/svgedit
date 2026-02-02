@@ -9,7 +9,8 @@
  */
 
 import { effect } from '../state/signals';
-import { documentState, documentStateUpdater } from '../state/document-state';
+import { documentState } from '../state/document-state';
+import { elementRegistry } from '../state/element-registry';
 import { selectionManager } from '../state/selection-manager';
 import type { DocumentNode } from '../types';
 
@@ -806,33 +807,21 @@ export class SVGAttributeInspector extends HTMLElement {
 
   /**
    * Handle attribute value change
-   * Only updates the document if validation passes
+   * Only updates the document if validation passes.
+   * Uses ElementRegistry for centralized attribute updates.
    */
   private handleAttributeChange(name: string, value: string) {
     if (!this.selectedElement) return;
 
     // Validate the attribute value before applying
     const isValid = this.validateAttribute(name, value);
-    
-    if (!isValid) {
-      // Don't update the document if validation fails
-      return;
-    }
+    if (!isValid) return;
 
-    // Update the attribute on the element
-    this.selectedElement.setAttribute(name, value);
+    const uuid = elementRegistry.getUUID(this.selectedElement);
+    if (!uuid) return;
 
-    // Update the current attributes map
-    this.currentAttributes.set(name, value);
-
-    // Update the document state
-    // This will trigger updates in other views (canvas, raw SVG, hierarchy)
-    const doc = documentState.svgDocument.get();
-    if (doc) {
-      // Serialize the updated document
-      const serializer = new XMLSerializer();
-      const svgString = serializer.serializeToString(doc);
-      documentStateUpdater.updateRawSVG(svgString);
+    if (elementRegistry.setAttribute(uuid, name, value)) {
+      this.currentAttributes.set(name, value);
     }
   }
 

@@ -9,6 +9,7 @@
 
 import { signal, computed, Signal, Computed } from './signals';
 import type { DocumentNode } from '../types';
+import { elementRegistry } from './element-registry';
 
 /**
  * Core document state signals
@@ -44,23 +45,17 @@ export function createDocumentState(): DocumentState {
   const selectedUUIDs = signal<Set<string>>(new Set());
   const hoveredUUID = signal<string | null>(null);
   
-  // Computed: Get selected element IDs from UUIDs
+  // Computed: Get selected element IDs from UUIDs (uses ElementRegistry)
   const selectedIds = computed(() => {
-    const doc = svgDocument.get();
+    elementRegistry.structureVersion.get(); // Track registry changes
     const uuids = selectedUUIDs.get();
-    
-    if (!doc || uuids.size === 0) {
-      return new Set<string>();
-    }
-    
+    if (uuids.size === 0) return new Set<string>();
+
     const ids = new Set<string>();
     uuids.forEach(uuid => {
-      const element = doc.querySelector(`[data-uuid="${uuid}"]`);
-      if (element && element.id) {
-        ids.add(element.id);
-      }
+      const id = elementRegistry.getId(uuid);
+      if (id) ids.add(id);
     });
-    
     return ids;
   });
   
@@ -70,50 +65,31 @@ export function createDocumentState(): DocumentState {
   // Computed: Count of selected elements
   const selectionCount = computed(() => selectedUUIDs.get().size);
   
-  // Computed: Get selected SVG elements from the document
+  // Computed: Get selected SVG elements (uses ElementRegistry)
   const selectedElements = computed(() => {
-    const doc = svgDocument.get();
+    elementRegistry.structureVersion.get(); // Track registry changes
     const uuids = selectedUUIDs.get();
-    
-    if (!doc || uuids.size === 0) {
-      return [];
-    }
-    
+    if (uuids.size === 0) return [];
+
     const elements: SVGElement[] = [];
     uuids.forEach(uuid => {
-      const element = doc.querySelector(`[data-uuid="${uuid}"]`) as SVGElement | null;
-      if (element) {
-        elements.push(element);
-      }
+      const el = elementRegistry.getElement(uuid);
+      if (el) elements.push(el);
     });
-    
     return elements;
   });
   
-  // Computed: Get selected document nodes from the tree
+  // Computed: Get selected document nodes (uses ElementRegistry)
   const selectedNodes = computed(() => {
-    const tree = documentTree.get();
+    elementRegistry.structureVersion.get(); // Track registry changes
     const uuids = selectedUUIDs.get();
-    
-    if (tree.length === 0 || uuids.size === 0) {
-      return [];
-    }
-    
+    if (uuids.size === 0) return [];
+
     const nodes: DocumentNode[] = [];
-    
-    // Recursive function to find nodes by UUID
-    const findNodes = (nodeList: DocumentNode[]) => {
-      for (const node of nodeList) {
-        if (node.attributes.has('data-uuid') && uuids.has(node.attributes.get('data-uuid')!)) {
-          nodes.push(node);
-        }
-        if (node.children.length > 0) {
-          findNodes(node.children);
-        }
-      }
-    };
-    
-    findNodes(tree);
+    uuids.forEach(uuid => {
+      const node = elementRegistry.getNode(uuid);
+      if (node) nodes.push(node);
+    });
     return nodes;
   });
   
@@ -155,23 +131,8 @@ export interface DocumentStateUpdater {
  * Create state updater functions for the document state
  */
 export function createDocumentStateUpdater(state: DocumentState): DocumentStateUpdater {
-  // Helper to convert IDs to UUIDs
-  const idsToUUIDs = (ids: string[]): string[] => {
-    const doc = state.svgDocument.get();
-    if (!doc) return [];
-    
-    const uuids: string[] = [];
-    ids.forEach(id => {
-      const element = doc.querySelector(`[id="${id}"]`);
-      if (element) {
-        const uuid = element.getAttribute('data-uuid');
-        if (uuid) {
-          uuids.push(uuid);
-        }
-      }
-    });
-    return uuids;
-  };
+  // Helper to convert IDs to UUIDs (uses ElementRegistry)
+  const idsToUUIDs = (ids: string[]): string[] => elementRegistry.idsToUUIDs(ids);
 
   return {
     // Document updates
@@ -179,10 +140,13 @@ export function createDocumentStateUpdater(state: DocumentState): DocumentStateU
       state.svgDocument.set(doc);
       state.documentTree.set(tree);
       state.rawSVG.set(svg);
+      elementRegistry.rebuild(doc, tree);
     },
     
     updateDocumentTree(tree: DocumentNode[]): void {
       state.documentTree.set(tree);
+      const doc = state.svgDocument.get();
+      elementRegistry.rebuild(doc, tree);
     },
     
     updateRawSVG(svg: string): void {
@@ -194,6 +158,7 @@ export function createDocumentStateUpdater(state: DocumentState): DocumentStateU
       state.documentTree.set([]);
       state.rawSVG.set('');
       state.selectedUUIDs.set(new Set());
+      elementRegistry.rebuild(null, []);
     },
     
     // Selection updates
